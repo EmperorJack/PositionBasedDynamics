@@ -32,6 +32,9 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
 # Incldue the imgui library
 include_directories(${PROJECT_SOURCE_DIR}/lib/imgui)
 
+# Include the eigen header library
+include_directories(${PROJECT_SOURCE_DIR}/lib/Eigen)
+
 # Include any external library files
 file(GLOB EXTERNAL
     lib/glm/glm/glm.hpp

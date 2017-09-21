@@ -2,7 +2,6 @@
 #include <fstream>
 #include <vector>
 #include <main.hpp>
-#include <GL/glew.h>
 #include <shaderLoader.hpp>
 
 GLuint loadShaders(std::string vertex_file_path_s, std::string fragment_file_path_s) {

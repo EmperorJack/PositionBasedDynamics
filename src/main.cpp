@@ -8,6 +8,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
 #include <main.hpp>
+#include <simulation.hpp>
 
 // Frame timing
 double lastTime = 0.0f;
@@ -67,6 +68,9 @@ int main() {
     // Setup ImGui binding
     ImGui_ImplGlfwGL3_Init(window, false);
 
+    // Setup simulation
+    Simulation* simulation = new Simulation();
+
     // Setup frame timing
     lastTime = glfwGetTime();
     frameCount = 0;
@@ -80,6 +84,7 @@ int main() {
 
         // Print the frame time every second
         if (currentTime - lastTime >= 1.0) {
+            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
         }
@@ -93,8 +98,10 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update simulation
+        simulation->update();
 
         // Render simulation
+        simulation->render();
 
         // Render gui
         ImGui::Render();
@@ -104,6 +111,8 @@ int main() {
 
     ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
+
+    delete simulation;
 
     return 0;
 }
