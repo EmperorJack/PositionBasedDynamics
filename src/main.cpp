@@ -14,7 +14,15 @@
 double lastTime = 0.0f;
 int frameCount = 0;
 
-void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {}
+// Mouse
+float mouseX = 0.0f;
+float mouseY = 0.0f;
+
+void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
+    mouseX = (float) xPos;
+    mouseY = (float) yPos;
+}
+
 void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {}
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {}
 

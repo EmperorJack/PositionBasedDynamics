@@ -6,11 +6,14 @@
 #define POSITIONBASEDDYNAMICS_SIMULATION_HPP
 
 #include <GL/glew.h>
+#include <camera.hpp>
 
 class Simulation {
 
 public:
     Simulation();
+    ~Simulation();
+
     void update();
     void render();
 
@@ -21,6 +24,9 @@ private:
 
     // VBOs
     GLuint planeVBO;
+
+    // Camera
+    Camera* camera;
 
 };
 
