@@ -7,6 +7,7 @@
 
 #include <GL/glew.h>
 #include <camera.hpp>
+#include <mesh.hpp>
 
 class Simulation {
 
@@ -27,6 +28,9 @@ private:
 
     // Camera
     Camera* camera;
+
+    // Objects
+    Mesh* mesh;
 
 };
 

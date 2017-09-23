@@ -3,7 +3,6 @@
 //
 
 #include <iostream>
-#include <string>
 #include <Eigen>
 #include <main.hpp>
 #include <shaderLoader.hpp>
@@ -28,10 +27,14 @@ Simulation::Simulation() {
 
     // Setup camera
     camera = new Camera();
+
+    // Setup objects
+    mesh = new Mesh("../resources/objects/cloth.obj");
 }
 
 Simulation::~Simulation() {
     delete camera;
+    delete mesh;
 }
 
 void Simulation::update() {
