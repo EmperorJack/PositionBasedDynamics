@@ -46,6 +46,7 @@ public:
     // Simulation fields
     vector<Vector3f> velocities;
     vector<float> masses;
+    vector<Vector3f> estimatePositions;
 
     // GL fields
     GLuint meshVBO;
