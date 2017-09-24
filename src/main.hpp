@@ -16,8 +16,4 @@
 // Paths
 static const char* SHADER_PATH = "resources/shaders/";
 
-// Mouse
-extern float mouseX;
-extern float mouseY;
-
 #endif

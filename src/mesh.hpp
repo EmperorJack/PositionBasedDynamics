@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <Eigen>
+#include <camera.hpp>
 #include <GL/glew.h>
 
 using namespace std;
@@ -26,12 +27,14 @@ struct Triangle {
 class Mesh {
 
 public:
-    Mesh(string filename);
+    Mesh(string filename, Vector4f colour);
     void parseObjFile(string filename);
-    void render();
+    void render(Camera* camera, Matrix4f transform);
 
     int numVertices;
     int numFaces;
+
+    Vector3f position;
 
     // Mesh fields
     vector<Vector3f> vertices;
@@ -46,6 +49,10 @@ public:
 
     // GL fields
     GLuint meshVBO;
+    GLuint shader;
+
+    // Colour
+    Vector4f colour;
 
 };
 

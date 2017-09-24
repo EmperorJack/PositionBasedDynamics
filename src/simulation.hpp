@@ -18,19 +18,16 @@ public:
     void update();
     void render();
 
+    float pitch, yaw, roll;
+
 private:
-
-    // Shaders
-    GLuint shader;
-
-    // VBOs
-    GLuint planeVBO;
 
     // Camera
     Camera* camera;
 
     // Objects
     Mesh* mesh;
+    Mesh* plane;
 
 };
 

@@ -15,15 +15,33 @@ double lastTime = 0.0f;
 int frameCount = 0;
 
 // Mouse
+bool mousePressed = false;
 float mouseX = 0.0f;
 float mouseY = 0.0f;
 
+// Instances
+Simulation* simulation;
+
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
+    float xChange =  (float) xPos - mouseX;
+    float yChange =  (float) yPos - mouseY;
+
     mouseX = (float) xPos;
     mouseY = (float) yPos;
+
+    if (mousePressed) {
+        simulation->pitch += yChange / 360.0f;
+        simulation->yaw += xChange / 360.0f;
+    }
 }
 
-void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {}
+void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) mousePressed = true;
+        else if (action == GLFW_RELEASE) mousePressed = false;
+    }
+}
+
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {}
 
 int main() {
@@ -77,11 +95,14 @@ int main() {
     ImGui_ImplGlfwGL3_Init(window, false);
 
     // Setup simulation
-    Simulation* simulation = new Simulation();
+    simulation = new Simulation();
 
     // Setup frame timing
     lastTime = glfwGetTime();
     frameCount = 0;
+
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
 
     // Check if the escape key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
@@ -102,7 +123,7 @@ int main() {
         ImGui_ImplGlfwGL3_NewFrame();
 
         // Clear the screen
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update simulation

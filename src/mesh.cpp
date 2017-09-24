@@ -5,9 +5,10 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <shaderLoader.hpp>
 #include <mesh.hpp>
 
-Mesh::Mesh(string filename) {
+Mesh::Mesh(string filename, Vector4f colour) : colour(colour) {
     parseObjFile(filename);
 
     this->numVertices = (int) vertices.size();
@@ -15,11 +16,39 @@ Mesh::Mesh(string filename) {
 
     // Setup VBO
     glGenBuffers(1, &meshVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vector3f), vertices[0].data(), GL_STATIC_DRAW);
+
+    // Setup shader
+    shader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
 }
 
-void Mesh::render() {
+void Mesh::render(Camera* camera, Matrix4f transform) {
+
+    // Setup transform
+    Affine3f t(Translation3f(position[0], position[1], position[2]));
+    Matrix4f modelMatrix = transform * t.matrix();
+
+    // Build renderable vertex list
+    vector<Vector3f> outVertices;
+
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        Triangle tri = triangles[i];
+
+        for (int j = 0; j < 3; j++) {
+            outVertices.push_back(vertices[tri.v[j].p]);
+        }
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
+    glBufferData(GL_ARRAY_BUFFER, outVertices.size() * sizeof(Vector3f), outVertices[0].data(), GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+
+    glUniform4fv(glGetUniformLocation(shader, "fillColor"), 1, colour.data());
+
+    // Bind matrices
+    glUniformMatrix4fv(glGetUniformLocation(3, "projection"), 1, GL_FALSE, camera->projectionMatrix.data());
+    glUniformMatrix4fv(glGetUniformLocation(3, "view"), 1, GL_FALSE, camera->viewMatrix.data());
+    glUniformMatrix4fv(glGetUniformLocation(3, "model"), 1, GL_FALSE, modelMatrix.data());
+
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
     glVertexAttribPointer(
@@ -31,24 +60,11 @@ void Mesh::render() {
             (void*)0   // array buffer offset
     );
 
-//    cout << numVertices << endl;
-
-    glDrawArrays(GL_TRIANGLES, 0, 24 * 3);
+    glDrawArrays(GL_TRIANGLES, 0, outVertices.size());
     glDisableVertexAttribArray(0);
 }
 
 void Mesh::parseObjFile(string filename) {
-    vector<Vector3f> tempVertices;
-    vector<Vector2f> tempUvs;
-    vector<Vector3f> tempNormals;
-
-    // Load dummy vertices because OBJ indexing starts at 1 not 0
-    Vector3f v = Vector3f(0, 0, 0);
-    Vector2f uv = Vector2f(0, 0);
-    Vector3f n = Vector3f(0, 0, 1);
-    tempVertices.push_back(v);
-    tempUvs.push_back(uv);
-    tempNormals.push_back(n);
 
     // Attempt to open an input stream to the file
     ifstream objFile(filename);
@@ -73,41 +89,34 @@ void Mesh::parseObjFile(string filename) {
         // attempting to read from an empty string/line will set the failbit
         if (!objLine.fail()) {
 
-            if (mode == "v") {
-                // Parse vertex
+            if (mode == "v") { // Vertex
                 Vector3f v;
                 objLine >> v[0] >> v[1] >> v[2];
-                tempVertices.push_back(v);
-            } else if (mode == "vn") {
-                // Parse vertex normal
+                vertices.push_back(v);
+            } else if (mode == "vn") { // Vertex normal
                 Vector3f vn;
                 objLine >> vn[0] >> vn[1] >> vn[2];
-                tempNormals.push_back(vn);
-            } else if (mode == "vt") {
-                // Parse UV
+                normals.push_back(vn);
+            } else if (mode == "vt") { // UV
                 Vector2f vt;
                 objLine >> vt[0] >> vt[1];
-                tempUvs.push_back(vt);
-            } else if (mode == "f") {
-                // Parse face
+                uvs.push_back(vt);
+            } else if (mode == "f") { // Face
                 vector<Vertex> verts;
                 while (objLine.good()) {
                     Vertex v;
 
+                    // OBJ face is formatted as v/vt/vn
                     objLine >> v.p; // Scan in position index
+                    objLine.ignore(1); // Ignore the '/' character
+                    objLine >> v.t; // Scan in uv (texture coord) index
+                    objLine.ignore(1); // Ignore the '/' character
+                    objLine >> v.n; // Scan in normal index
 
-                    // Check if the obj file contains normal data
-                    if (tempNormals.size() > 1) {
-                        // obj face is formatted as v/vt/vn or v//vn
-                        objLine.ignore(1); // Ignore the '/' character
-
-                        if (tempUvs.size() > 1) { // Check if the obj file contains uv data
-                            objLine >> v.t; // Scan in uv (texture coord) index
-                        }
-                        objLine.ignore(1); // Ignore the '/' character
-
-                        objLine >> v.n; // Scan in normal index
-                    } // Else the obj face is formatted just as v
+                    // Correct the indices
+                    v.p -= 1;
+                    v.n -= 1;
+                    v.t -= 1;
 
                     verts.push_back(v);
                 }
@@ -126,19 +135,10 @@ void Mesh::parseObjFile(string filename) {
 
     // Generate surface normals
     for (int i = 0; i < triangles.size(); i++) {
-        Vector3f v1 = tempVertices[triangles[i].v[1].p] - tempVertices[triangles[i].v[0].p];
-        Vector3f v2 = tempVertices[triangles[i].v[2].p] - tempVertices[triangles[i].v[0].p];
+        Vector3f v1 = vertices[triangles[i].v[1].p] - vertices[triangles[i].v[0].p];
+        Vector3f v2 = vertices[triangles[i].v[2].p] - vertices[triangles[i].v[0].p];
         Vector3f surfaceNormal = v1.cross(v2);
         surfaceNormal.normalize();
         surfaceNormals.push_back(surfaceNormal);
-    }
-
-    // Perform indexing
-    for (unsigned int i = 0; i < triangles.size(); i++) {
-        Triangle tri = triangles[i];
-
-        for (int j = 0; j < 3; j++) {
-            vertices.push_back(tempVertices[tri.v[j].p]);
-        }
     }
 }
