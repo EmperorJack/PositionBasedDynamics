@@ -42,7 +42,13 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
     }
 }
 
-void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {}
+void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        if (key == ' ') {
+            simulation->reset();
+        }
+    }
+}
 
 int main() {
 

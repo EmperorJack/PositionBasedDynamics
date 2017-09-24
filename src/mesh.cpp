@@ -14,6 +14,8 @@ Mesh::Mesh(string filename, Vector4f colour) : colour(colour) {
     this->numVertices = (int) vertices.size();
     this->numFaces = (int) triangles.size();
 
+    initialVertices = vertices;
+
     // Setup VBO
     glGenBuffers(1, &meshVBO);
 

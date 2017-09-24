@@ -37,6 +37,7 @@ public:
     Vector3f position;
 
     // Mesh fields
+    vector<Vector3f> initialVertices;
     vector<Vector3f> vertices;
     vector<Vector2f> uvs;
     vector<Vector3f> normals;

@@ -15,6 +15,7 @@ public:
     Simulation();
     ~Simulation();
 
+    void reset();
     void update();
     void render();
 
@@ -28,6 +29,9 @@ private:
     // Objects
     Mesh* mesh;
     Mesh* plane;
+
+    // Solver
+    SparseLU<SparseMatrix<float>> solver;
 
 };
 
