@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <Eigen>
+#include <GL/glew.h>
 
 using namespace std;
 using namespace Eigen;
@@ -27,20 +28,24 @@ class Mesh {
 public:
     Mesh(string filename);
     void parseObjFile(string filename);
+    void render();
 
     int numVertices;
     int numFaces;
 
     // Mesh fields
     vector<Vector3f> vertices;
-    vector<Triangle> triangles;
     vector<Vector2f> uvs;
     vector<Vector3f> normals;
+    vector<Triangle> triangles;
     std::vector<Vector3f> surfaceNormals;
 
     // Simulation fields
     vector<Vector3f> velocities;
     vector<float> masses;
+
+    // GL fields
+    GLuint meshVBO;
 
 };
 

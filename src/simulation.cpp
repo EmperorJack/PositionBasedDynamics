@@ -13,23 +13,11 @@ using namespace Eigen;
 Simulation::Simulation() {
     shader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
 
-    // Setup VBOs
-    float planeVertices[] = {
-            -1, -1, 0,
-            1, -1, 0,
-            1, 1, 0,
-            -1, 1, 0,
-    };
-
-    glGenBuffers(1, &planeVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-
     // Setup camera
     camera = new Camera();
 
     // Setup objects
-    mesh = new Mesh("../resources/objects/cloth.obj");
+    mesh = new Mesh("../resources/objects/cube.obj");
 }
 
 Simulation::~Simulation() {
@@ -62,17 +50,5 @@ void Simulation::render() {
     glUniformMatrix4fv(glGetUniformLocation(3, "view"), 1, GL_FALSE, camera->viewMatrix.data());
     glUniformMatrix4fv(glGetUniformLocation(3, "model"), 1, GL_FALSE, modelMatrix.data());
 
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glVertexAttribPointer(
-            0,         // shader layout attribute
-            3,         // size
-            GL_FLOAT,  // type
-            GL_FALSE,  // normalized?
-            0,         // stride
-            (void*)0   // array buffer offset
-    );
-
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    glDisableVertexAttribArray(0);
+    mesh->render();
 }
