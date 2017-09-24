@@ -16,6 +16,10 @@ public:
     ~Simulation();
 
     void reset();
+
+    Constraint buildFixedConstraint(int index);
+    Constraint buildDistanceConstraint(int indexA, int indexB, float distance);
+
     void update();
     void render();
 
@@ -31,6 +35,7 @@ private:
     Mesh* plane;
 
     // Solver
+    vector<Constraint> constraints;
     SparseLU<SparseMatrix<float>> solver;
 
 };

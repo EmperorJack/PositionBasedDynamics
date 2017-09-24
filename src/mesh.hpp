@@ -24,6 +24,19 @@ struct Triangle {
     Vertex v[3];
 };
 
+enum ConstraintType {
+    FIXED,
+    DISTANCE
+};
+
+struct Constraint {
+    int cardinatlity;
+    vector<int> indices;
+    ConstraintType type;
+    Vector3f target;
+    float distance;
+};
+
 class Mesh {
 
 public:
@@ -46,7 +59,7 @@ public:
 
     // Simulation fields
     vector<Vector3f> velocities;
-    vector<float> masses;
+    vector<float> inverseMasses;
     vector<Vector3f> estimatePositions;
 
     // GL fields
