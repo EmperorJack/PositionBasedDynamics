@@ -31,30 +31,26 @@ Simulation::Simulation() {
     flagMesh = new Mesh("../resources/models/flag.obj", flagColour);
 
     // Setup constraints
-    cubeMesh->constraints.push_back(buildFixedConstraint(3));
+    cubeMesh->constraints.push_back(buildFixedConstraint(3, cubeMesh->initialVertices[3]));
     buildEdgeConstraints(cubeMesh, 1.0f);
 
-    reset();
+    for (int i = 0; i < 7; i++) {
+        flagMesh->constraints.push_back(buildFixedConstraint(i, flagMesh->initialVertices[i]));
+    }
+    buildEdgeConstraints(flagMesh, 0.1f);
 }
 
 Simulation::~Simulation() {
     delete camera;
     delete cubeMesh;
     delete planeMesh;
+    delete flagPoleMesh;
+    delete flagMesh;
 }
 
 void Simulation::reset() {
-    cubeMesh->vertices = cubeMesh->initialVertices;
-
-    cubeMesh->velocities.clear();
-    cubeMesh->inverseMasses.clear();
-
-    Vector3f initialVelocity(1.0f, 0.0f, -1.0f);
-    float vertexMass = 1.0f;
-    for (int i = 0; i < cubeMesh->numVertices; i++) {
-        cubeMesh->velocities.push_back(initialVelocity);
-        cubeMesh->inverseMasses.push_back(1.0f / vertexMass);
-    }
+    cubeMesh->reset();
+    flagMesh->reset();
 }
 
 void Simulation::buildEdgeConstraints(Mesh* mesh, float stiffness) {
@@ -68,12 +64,12 @@ void Simulation::buildEdgeConstraints(Mesh* mesh, float stiffness) {
     }
 }
 
-Constraint Simulation::buildFixedConstraint(int index) {
+Constraint Simulation::buildFixedConstraint(int index, Vector3f target) {
     Constraint constraint;
     constraint.type = FIXED;
     constraint.indices.push_back(index);
     constraint.cardinatlity = 1;
-    constraint.target = cubeMesh->initialVertices[index];
+    constraint.target = target;
     constraint.stiffness = 1.0f;
     return constraint;
 }
@@ -91,12 +87,13 @@ Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float dis
 
 void Simulation::update() {
     simulate(cubeMesh);
+    simulate(flagMesh);
 }
 
 void Simulation::simulate(Mesh* mesh) {
     // Apply external forces
     for (int i = 0; i < mesh->numVertices; i++) {
-        mesh->velocities[i] += timeStep * Vector3f(0, -gravity, 0);
+        mesh->velocities[i] += timeStep * Vector3f(-gravity, 0, 0);
     }
 
     // Dampen velocities
@@ -118,7 +115,7 @@ void Simulation::simulate(Mesh* mesh) {
 
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
-        for (Constraint constraint : cubeMesh->constraints) {
+        for (Constraint constraint : mesh->constraints) {
 
             SparseMatrix<float> coefficients(constraint.cardinatlity, constraint.cardinatlity);
 

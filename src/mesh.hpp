@@ -53,12 +53,14 @@ public:
     Mesh(string filename, Vector3f colour);
     void parseObjFile(string filename);
     void generateSurfaceNormals();
+
+    void reset();
     void render(Camera* camera, Matrix4f transform);
 
     int numVertices;
     int numFaces;
 
-    Vector3f position;
+    Vector3f position = Vector3f(0.0f, 0.0f, 0.0f);
 
     // Mesh fields
     vector<Vector3f> initialVertices;

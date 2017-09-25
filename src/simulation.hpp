@@ -18,7 +18,7 @@ public:
     void reset();
 
     void buildEdgeConstraints(Mesh* mesh, float stiffness);
-    Constraint buildFixedConstraint(int index);
+    Constraint buildFixedConstraint(int index, Vector3f target);
     Constraint buildDistanceConstraint(int indexA, int indexB, float distance, float stiffness);
 
     void update();
