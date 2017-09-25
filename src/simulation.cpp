@@ -19,10 +19,10 @@ Simulation::Simulation() {
     camera = new Camera();
 
     // Setup objects
-    Vector4f meshColour = { 0.15f, 0.45f, 0.8f, 1.0f };
+    Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
     mesh = new Mesh("../resources/objects/cube.obj", meshColour);
 
-    Vector4f planeColour = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
     plane = new Mesh("../resources/objects/plane.obj", planeColour);
     plane->position = Vector3f(0, -2, 0);
 
@@ -166,15 +166,6 @@ void Simulation::update() {
                 exit(-1);
             }
 
-            if (constraint.type == DISTANCE && false) {
-                cout << "P1: " << mesh->estimatePositions[constraint.indices[0]] << endl;
-                cout << "P2: " << mesh->estimatePositions[constraint.indices[1]] << endl;
-//                cout << "Target: " << constraint.target << endl;
-                cout << "A: " << endl << A << "~~~" << endl;
-                cout << "B: " << endl << B << endl << "~~~" << endl;
-                cout << "X: " << endl << X << endl << "~~~" << endl << endl;
-            }
-
             for (int i = 0; i < constraint.cardinatlity; i++) {
                 int vertexIndex = constraint.indices[i];
                 mesh->estimatePositions[vertexIndex] += X.row(i);
@@ -190,14 +181,11 @@ void Simulation::update() {
 
     // Update velocities of colliding vertices
     // TODO
-
-    // Ensure attachments are positioned correctly
-    //mesh->vertices[constraintedVertex] = pos;
 }
 
 void Simulation::render() {
     camera->setPerspective(45.0f, (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT, 0.1f, 100.0f);
-    camera->lookAt(Vector3f(0, 0, 10), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
+    camera->lookAt(Vector3f(0, 0, 12), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
 
     AngleAxisf pitchAngle(pitch, Vector3f::UnitX());
     AngleAxisf yawAngle(yaw, Vector3f::UnitY());
@@ -208,5 +196,5 @@ void Simulation::render() {
     Matrix4f modelMatrix = Matrix4f::Identity() * r;
 
     mesh->render(camera, modelMatrix);
-    //plane->render(camera, modelMatrix);
+    plane->render(camera, modelMatrix);
 }

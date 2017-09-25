@@ -40,8 +40,9 @@ struct Constraint {
 class Mesh {
 
 public:
-    Mesh(string filename, Vector4f colour);
+    Mesh(string filename, Vector3f colour);
     void parseObjFile(string filename);
+    void generateSurfaceNormals();
     void render(Camera* camera, Matrix4f transform);
 
     int numVertices;
@@ -62,12 +63,13 @@ public:
     vector<float> inverseMasses;
     vector<Vector3f> estimatePositions;
 
-    // GL fields
-    GLuint meshVBO;
-    GLuint shader;
+    // VBOs
+    GLuint positionVBO;
+    GLuint normalVBO;
 
-    // Colour
-    Vector4f colour;
+    // Rendering
+    GLuint shader;
+    Vector3f colour;
 
 };
 

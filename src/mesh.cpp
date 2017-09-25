@@ -8,7 +8,7 @@
 #include <shaderLoader.hpp>
 #include <mesh.hpp>
 
-Mesh::Mesh(string filename, Vector4f colour) : colour(colour) {
+Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
     parseObjFile(filename);
 
     this->numVertices = (int) vertices.size();
@@ -17,7 +17,8 @@ Mesh::Mesh(string filename, Vector4f colour) : colour(colour) {
     initialVertices = vertices;
 
     // Setup VBO
-    glGenBuffers(1, &meshVBO);
+    glGenBuffers(1, &positionVBO);
+    glGenBuffers(1, &normalVBO);
 
     // Setup shader
     shader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
@@ -29,30 +30,54 @@ void Mesh::render(Camera* camera, Matrix4f transform) {
     Affine3f t(Translation3f(position[0], position[1], position[2]));
     Matrix4f modelMatrix = transform * t.matrix();
 
-    // Build renderable vertex list
-    vector<Vector3f> outVertices;
-
+    // Compute vertex normals
+    vector<Vector3f> tempNormals;
+    tempNormals.resize((size_t) numVertices, Vector3f::Zero());
+    generateSurfaceNormals();
     for (unsigned int i = 0; i < triangles.size(); i++) {
         Triangle tri = triangles[i];
 
         for (int j = 0; j < 3; j++) {
-            outVertices.push_back(vertices[tri.v[j].p]);
+            tempNormals[tri.v[j].p] += surfaceNormals[i];
         }
     }
-    glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
+
+    // Build vertex positions and normals
+    vector<Vector3f> outVertices;
+    vector<Vector3f> outNormals;
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        Triangle tri = triangles[i];
+
+        for (int j = 0; j < 3; j++) {
+            Vector3f position = vertices[tri.v[j].p];
+            Vector3f normal = tempNormals[tri.v[j].p];
+
+            outVertices.push_back(position);
+            normal.normalize();
+            outNormals.push_back(normal);
+        }
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
     glBufferData(GL_ARRAY_BUFFER, outVertices.size() * sizeof(Vector3f), outVertices[0].data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+    glBufferData(GL_ARRAY_BUFFER, outNormals.size() * sizeof(Vector3f), outNormals[0].data(), GL_STATIC_DRAW);
 
     glUseProgram(shader);
 
-    glUniform4fv(glGetUniformLocation(shader, "fillColor"), 1, colour.data());
+    glUniform3fv(glGetUniformLocation(shader, "materialColour"), 1, colour.data());
+    Vector4f lightPosition = Vector4f(0, 10, 0, 0);
+    lightPosition = modelMatrix * lightPosition;
+    glUniform3fv(glGetUniformLocation(shader, "lightPosition"), 1, lightPosition.data());
 
     // Bind matrices
     glUniformMatrix4fv(glGetUniformLocation(3, "projection"), 1, GL_FALSE, camera->projectionMatrix.data());
     glUniformMatrix4fv(glGetUniformLocation(3, "view"), 1, GL_FALSE, camera->viewMatrix.data());
     glUniformMatrix4fv(glGetUniformLocation(3, "model"), 1, GL_FALSE, modelMatrix.data());
 
+    // Bind vertex positions
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
     glVertexAttribPointer(
             0,         // shader layout attribute
             3,         // size
@@ -62,8 +87,21 @@ void Mesh::render(Camera* camera, Matrix4f transform) {
             (void*)0   // array buffer offset
     );
 
+    // Bind vertex normals
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+    glVertexAttribPointer(
+            1,         // shader layout attribute
+            3,         // size
+            GL_FLOAT,  // type
+            GL_FALSE,  // normalized?
+            0,         // stride
+            (void*)0   // array buffer offset
+    );
+
     glDrawArrays(GL_TRIANGLES, 0, outVertices.size());
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 }
 
 void Mesh::parseObjFile(string filename) {
@@ -135,7 +173,11 @@ void Mesh::parseObjFile(string filename) {
         }
     }
 
-    // Generate surface normals
+    generateSurfaceNormals();
+}
+
+void Mesh::generateSurfaceNormals() {
+    surfaceNormals.clear();
     for (int i = 0; i < triangles.size(); i++) {
         Vector3f v1 = vertices[triangles[i].v[1].p] - vertices[triangles[i].v[0].p];
         Vector3f v2 = vertices[triangles[i].v[2].p] - vertices[triangles[i].v[0].p];
