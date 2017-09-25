@@ -17,8 +17,9 @@ public:
 
     void reset();
 
+    void buildEdgeConstraints(Mesh* mesh, float stiffness);
     Constraint buildFixedConstraint(int index);
-    Constraint buildDistanceConstraint(int indexA, int indexB, float distance);
+    Constraint buildDistanceConstraint(int indexA, int indexB, float distance, float stiffness);
 
     void update();
     void simulate(Mesh* mesh);

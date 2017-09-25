@@ -30,26 +30,9 @@ Simulation::Simulation() {
     Vector3f flagColour = { 0.6f, 0.0f, 0.0f };
     flagMesh = new Mesh("../resources/models/flag.obj", flagColour);
 
-    // Setup fixed constraints
+    // Setup constraints
     cubeMesh->constraints.push_back(buildFixedConstraint(3));
-    //cubeMesh->constraints.push_back(buildFixedConstraint(5));
-
-    // Setup distance constraints
-    for (Triangle face : cubeMesh->triangles) {
-        int v0 = face.v[0].p;
-        int v1 = face.v[1].p;
-        int v2 = face.v[2].p;
-
-        cubeMesh->constraints.push_back(buildDistanceConstraint(
-                v0, v1, (cubeMesh->vertices[v0] - cubeMesh->vertices[v1]).norm()
-        ));
-        cubeMesh->constraints.push_back(buildDistanceConstraint(
-                v0, v2, (cubeMesh->vertices[v0] - cubeMesh->vertices[v2]).norm()
-        ));
-        cubeMesh->constraints.push_back(buildDistanceConstraint(
-                v1, v2, (cubeMesh->vertices[v1] - cubeMesh->vertices[v2]).norm()
-        ));
-    }
+    buildEdgeConstraints(cubeMesh, 1.0f);
 
     reset();
 }
@@ -74,6 +57,17 @@ void Simulation::reset() {
     }
 }
 
+void Simulation::buildEdgeConstraints(Mesh* mesh, float stiffness) {
+    for (Edge edge : mesh->edges) {
+        int v0 = edge.v[0].p;
+        int v1 = edge.v[1].p;
+
+        mesh->constraints.push_back(buildDistanceConstraint(
+                v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm(), stiffness
+        ));
+    }
+}
+
 Constraint Simulation::buildFixedConstraint(int index) {
     Constraint constraint;
     constraint.type = FIXED;
@@ -84,14 +78,14 @@ Constraint Simulation::buildFixedConstraint(int index) {
     return constraint;
 }
 
-Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float distance) {
+Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float distance, float stiffness) {
     Constraint constraint;
     constraint.type = DISTANCE;
     constraint.indices.push_back(indexA);
     constraint.indices.push_back(indexB);
     constraint.cardinatlity = 2;
     constraint.distance = distance;
-    constraint.stiffness = 1.0f;
+    constraint.stiffness = stiffness;
     return constraint;
 }
 

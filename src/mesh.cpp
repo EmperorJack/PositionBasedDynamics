@@ -168,10 +168,27 @@ void Mesh::parseObjFile(string filename) {
                     tri.v[1] = verts[1];
                     tri.v[2] = verts[2];
                     triangles.push_back(tri);
+
+//                    cout << verts[0].p << ", " << verts[1].p << ", " << verts[2].p << endl << "~~~" << endl;
+
+                    // Construct edges
+                    edges.push_back(Edge(verts[0], verts[1]));
+                    edges.push_back(Edge(verts[0], verts[2]));
+                    edges.push_back(Edge(verts[1], verts[2]));
                 }
             }
         }
     }
+
+    // TODO remove duplicate edges
+
+    cout << "~~EDGES~~" << endl;
+
+    for (Edge e : edges) {
+        cout << e.v[0].p << ", " << e.v[1].p << endl << "~~~" << endl;
+    }
+
+    cout << edges.size() << endl;
 
     generateSurfaceNormals();
 }

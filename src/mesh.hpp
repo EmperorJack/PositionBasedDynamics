@@ -5,6 +5,7 @@
 #ifndef POSITIONBASEDDYNAMICS_MESH_HPP
 #define POSITIONBASEDDYNAMICS_MESH_HPP
 
+#include <set>
 #include <string>
 #include <vector>
 #include <Eigen>
@@ -18,6 +19,14 @@ struct Vertex {
     int p;
     int t;
     int n;
+};
+
+struct Edge {
+    Edge(Vertex vertexA, Vertex vertexB) {
+        v[0] = vertexA;
+        v[1] = vertexB;
+    }
+    Vertex v[2];
 };
 
 struct Triangle {
@@ -56,6 +65,7 @@ public:
     vector<Vector3f> vertices;
     vector<Vector2f> uvs;
     vector<Vector3f> normals;
+    vector<Edge> edges;
     vector<Triangle> triangles;
     std::vector<Vector3f> surfaceNormals;
 
