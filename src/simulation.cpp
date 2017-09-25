@@ -4,14 +4,11 @@
 
 #include <iostream>
 #include <Eigen>
+#include <imgui.h>
 #include <main.hpp>
 #include <simulation.hpp>
 
 using namespace Eigen;
-
-const float TIME_STEP = 0.1f;
-const Vector3f GRAVITY(0, -0.981f, 0);
-const int SOLVER_ITERATIONS = 10;
 
 Simulation::Simulation() {
 
@@ -20,15 +17,16 @@ Simulation::Simulation() {
 
     // Setup objects
     Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-    mesh = new Mesh("../resources/objects/cube.obj", meshColour);
+    mesh = new Mesh("../resources/models/cube.obj", meshColour);
+    mesh->position = Vector3f(-1.0f, 0.0f, -1.0f);
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
-    plane = new Mesh("../resources/objects/plane.obj", planeColour);
-    plane->position = Vector3f(0, -2, 0);
+    plane = new Mesh("../resources/models/plane.obj", planeColour);
+    plane->position = Vector3f(0, -3, 0);
 
     // Setup fixed constraints
     constraints.push_back(buildFixedConstraint(3));
-    constraints.push_back(buildFixedConstraint(5));
+    //constraints.push_back(buildFixedConstraint(5));
 
     // Setup distance constraints
     for (Triangle face : mesh->triangles) {
@@ -64,7 +62,7 @@ void Simulation::reset() {
     mesh->velocities.clear();
     mesh->inverseMasses.clear();
 
-    Vector3f initialVelocity(0.0f, 0.0f, 0.0f);
+    Vector3f initialVelocity(1.0f, 0.0f, -1.0f);
     float vertexMass = 1.0f;
     for (int i = 0; i < mesh->numVertices; i++) {
         mesh->velocities.push_back(initialVelocity);
@@ -97,13 +95,13 @@ void Simulation::update() {
 
     // Apply external forces
     for (int i = 0; i < mesh->numVertices; i++) {
-        mesh->velocities[i] += TIME_STEP * GRAVITY;
+        mesh->velocities[i] += timeStep * Vector3f(0, -gravity, 0);
     }
 
     // Dampen velocities
     for (int i = 0; i < mesh->numVertices; i++) {
         // TODO
-        // mesh->velocities[i] *= 0.99f;
+         mesh->velocities[i] *= velocityDamping;
     }
 
     mesh->estimatePositions.clear();
@@ -111,14 +109,14 @@ void Simulation::update() {
 
     // Initialise estimate positions
     for (int i = 0; i < mesh->numVertices; i++) {
-        mesh->estimatePositions[i] = mesh->vertices[i] + TIME_STEP * mesh->velocities[i];
+        mesh->estimatePositions[i] = mesh->vertices[i] + timeStep * mesh->velocities[i];
     }
 
     // Generate collision constraints
     // TODO
 
     // Project constraints iteratively
-    for (int iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
+    for (int iteration = 0; iteration < solverIterations; iteration++) {
         for (Constraint constraint : constraints) {
 
             SparseMatrix<float> A(constraint.cardinatlity, constraint.cardinatlity);
@@ -175,7 +173,7 @@ void Simulation::update() {
 
     // Update positions and velocities
     for (int i = 0; i < mesh->numVertices; i++) {
-        mesh->velocities[i] = (mesh->estimatePositions[i] - mesh->vertices[i]) / TIME_STEP;
+        mesh->velocities[i] = (mesh->estimatePositions[i] - mesh->vertices[i]) / timeStep;
         mesh->vertices[i] = mesh->estimatePositions[i];
     }
 
@@ -197,4 +195,22 @@ void Simulation::render() {
 
     mesh->render(camera, modelMatrix);
     plane->render(camera, modelMatrix);
+}
+
+void Simulation::renderGUI() {
+    ImGui::Begin("Simulator");
+
+    ImGui::Text("Solver Iterations");
+    ImGui::SliderInt("##solverIterations", &solverIterations, 1, 100, "%.0f");
+
+    ImGui::Text("Timestep");
+    ImGui::SliderFloat("##timeStep", &timeStep, 0.01f, 1.0f, "%.2f");
+
+    ImGui::Text("Gravity");
+    ImGui::SliderFloat("##gravity", &gravity, 0.01f, 10.0f, "%.2f");
+
+    ImGui::Text("Velocity Damping");
+    ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");
+
+    ImGui::End();
 }

@@ -22,7 +22,15 @@ public:
 
     void update();
     void render();
+    void renderGUI();
 
+    // Variables
+    int solverIterations = 10;
+    float timeStep = 0.1f;
+    float gravity = 0.981f;
+    float velocityDamping = 1.0f;
+
+    // Camera variables
     float pitch, yaw, roll;
 
 private:

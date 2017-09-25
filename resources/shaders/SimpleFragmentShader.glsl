@@ -21,7 +21,7 @@ void main() {
 
 	float cosTheta = clamp(dot(n, l), 0, 1);
 
-    vec3 ambient = 0.25 * materialColour;
+    vec3 ambient = 0.15 * materialColour;
 	vec3 diffuse = (materialColour * lightColor * lightPower * cosTheta) / (distance * distance);
 
 //    color = materialColour;

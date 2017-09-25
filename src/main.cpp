@@ -29,7 +29,7 @@ void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
     mouseX = (float) xPos;
     mouseY = (float) yPos;
 
-    if (mousePressed) {
+    if (mousePressed && !ImGui::IsMouseHoveringAnyWindow()) {
         simulation->pitch += yChange / 360.0f;
         simulation->yaw += xChange / 360.0f;
     }
@@ -139,6 +139,7 @@ int main() {
         simulation->render();
 
         // Render gui
+        simulation->renderGUI();
         ImGui::Render();
 
         glfwSwapBuffers(window);
