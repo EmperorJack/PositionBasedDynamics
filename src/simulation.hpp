@@ -30,6 +30,7 @@ public:
     int solverIterations = 10;
     float timeStep = 0.1f;
     float gravity = 0.981f;
+    float windSpeed = 1.0f;
     float velocityDamping = 1.0f;
 
     // Camera variables
@@ -41,10 +42,10 @@ private:
     Camera* camera;
 
     // Objects
-    Mesh* cubeMesh;
-    Mesh* planeMesh;
-    Mesh* flagPoleMesh;
-    Mesh* flagMesh;
+    Mesh* testCube;
+    Mesh* plane;
+    Mesh* flagPole;
+    Mesh* flag;
 
     // Solver
     SparseLU<SparseMatrix<float>> solver;

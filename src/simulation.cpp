@@ -17,40 +17,43 @@ Simulation::Simulation() {
 
     // Setup objects
     Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-    cubeMesh = new Mesh("../resources/models/cube.obj", meshColour);
-    cubeMesh->position = Vector3f(-1.0f - 5.0f, 0.0f, -1.0f - 5.0f);
+    testCube = new Mesh("../resources/models/cube.obj", meshColour);
+    testCube->position = Vector3f(-1.0f - 5.0f, 0.0f, -1.0f - 5.0f);
+    testCube->gravityAffected = true;
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
-    planeMesh = new Mesh("../resources/models/plane.obj", planeColour);
-    planeMesh->position = Vector3f(0, -3, 0);
+    plane = new Mesh("../resources/models/plane.obj", planeColour);
+    plane->position = Vector3f(0, -3, 0);
 
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
-    flagPoleMesh = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
+    flagPole = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
 
     Vector3f flagColour = { 0.6f, 0.0f, 0.0f };
-    flagMesh = new Mesh("../resources/models/flag.obj", flagColour);
+    flag = new Mesh("../resources/models/flag.obj", flagColour);
+    flag->gravityAffected = true;
+    flag->windAffected = true;
 
     // Setup constraints
-    cubeMesh->constraints.push_back(buildFixedConstraint(3, cubeMesh->initialVertices[3]));
-    buildEdgeConstraints(cubeMesh, 1.0f);
+    testCube->constraints.push_back(buildFixedConstraint(3, testCube->initialVertices[3]));
+    buildEdgeConstraints(testCube, 1.0f);
 
     for (int i = 0; i < 7; i++) {
-        flagMesh->constraints.push_back(buildFixedConstraint(i, flagMesh->initialVertices[i]));
+        flag->constraints.push_back(buildFixedConstraint(i, flag->initialVertices[i]));
     }
-    buildEdgeConstraints(flagMesh, 0.1f);
+    buildEdgeConstraints(flag, 0.5f);
 }
 
 Simulation::~Simulation() {
     delete camera;
-    delete cubeMesh;
-    delete planeMesh;
-    delete flagPoleMesh;
-    delete flagMesh;
+    delete testCube;
+    delete plane;
+    delete flagPole;
+    delete flag;
 }
 
 void Simulation::reset() {
-    cubeMesh->reset();
-    flagMesh->reset();
+    testCube->reset();
+    flag->reset();
 }
 
 void Simulation::buildEdgeConstraints(Mesh* mesh, float stiffness) {
@@ -86,14 +89,16 @@ Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float dis
 }
 
 void Simulation::update() {
-    simulate(cubeMesh);
-    simulate(flagMesh);
+    simulate(testCube);
+    simulate(flag);
 }
 
 void Simulation::simulate(Mesh* mesh) {
+
     // Apply external forces
     for (int i = 0; i < mesh->numVertices; i++) {
-        mesh->velocities[i] += timeStep * Vector3f(-gravity, 0, 0);
+        if (mesh->gravityAffected) mesh->velocities[i] += timeStep * Vector3f(0, -gravity, 0);
+        if (mesh->windAffected) mesh->velocities[i] += timeStep * Vector3f(-windSpeed, 0, 0);
     }
 
     // Dampen velocities
@@ -193,10 +198,10 @@ void Simulation::render() {
     r.block(0, 0, 3, 3) = q.toRotationMatrix();
     Matrix4f modelMatrix = Matrix4f::Identity() * r;
 
-    cubeMesh->render(camera, modelMatrix);
-    planeMesh->render(camera, modelMatrix);
-    flagPoleMesh->render(camera, modelMatrix);
-    flagMesh->render(camera, modelMatrix);
+    testCube->render(camera, modelMatrix);
+    plane->render(camera, modelMatrix);
+    flagPole->render(camera, modelMatrix);
+    flag->render(camera, modelMatrix);
 }
 
 void Simulation::renderGUI() {
@@ -210,6 +215,9 @@ void Simulation::renderGUI() {
 
     ImGui::Text("Gravity");
     ImGui::SliderFloat("##gravity", &gravity, 0.01f, 10.0f, "%.2f");
+
+    ImGui::Text("WindSpeed");
+    ImGui::SliderFloat("##windSpeed", &windSpeed, 0.01f, 10.0f, "%.2f");
 
     ImGui::Text("Velocity Damping");
     ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");

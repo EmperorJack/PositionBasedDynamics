@@ -51,9 +51,6 @@ class Mesh {
 
 public:
     Mesh(string filename, Vector3f colour);
-    void parseObjFile(string filename);
-    void generateSurfaceNormals();
-
     void reset();
     void render(Camera* camera, Matrix4f transform);
 
@@ -76,6 +73,12 @@ public:
     vector<float> inverseMasses;
     vector<Vector3f> estimatePositions;
     vector<Constraint> constraints;
+    bool gravityAffected = false;
+    bool windAffected = false;
+
+private:
+    void parseObjFile(string filename);
+    void generateSurfaceNormals();
 
     // VBOs
     GLuint positionVBO;
