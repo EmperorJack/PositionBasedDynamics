@@ -63,6 +63,7 @@ public:
     vector<Vector3f> velocities;
     vector<float> inverseMasses;
     vector<Vector3f> estimatePositions;
+    vector<Constraint> constraints;
 
     // VBOs
     GLuint positionVBO;

@@ -17,59 +17,61 @@ Simulation::Simulation() {
 
     // Setup objects
     Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-    mesh = new Mesh("../resources/models/cube.obj", meshColour);
-    mesh->position = Vector3f(-1.0f, 0.0f, -1.0f);
+    cubeMesh = new Mesh("../resources/models/cube.obj", meshColour);
+    cubeMesh->position = Vector3f(-1.0f - 5.0f, 0.0f, -1.0f - 5.0f);
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
-    plane = new Mesh("../resources/models/plane.obj", planeColour);
-    plane->position = Vector3f(0, -3, 0);
+    planeMesh = new Mesh("../resources/models/plane.obj", planeColour);
+    planeMesh->position = Vector3f(0, -3, 0);
+
+    Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
+    flagPoleMesh = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
+
+    Vector3f flagColour = { 0.6f, 0.0f, 0.0f };
+    flagMesh = new Mesh("../resources/models/flag.obj", flagColour);
 
     // Setup fixed constraints
-    constraints.push_back(buildFixedConstraint(3));
-    //constraints.push_back(buildFixedConstraint(5));
+    cubeMesh->constraints.push_back(buildFixedConstraint(3));
+    //cubeMesh->constraints.push_back(buildFixedConstraint(5));
 
     // Setup distance constraints
-    for (Triangle face : mesh->triangles) {
+    for (Triangle face : cubeMesh->triangles) {
         int v0 = face.v[0].p;
         int v1 = face.v[1].p;
         int v2 = face.v[2].p;
 
-        constraints.push_back(buildDistanceConstraint(
-                v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm()
+        cubeMesh->constraints.push_back(buildDistanceConstraint(
+                v0, v1, (cubeMesh->vertices[v0] - cubeMesh->vertices[v1]).norm()
         ));
-        constraints.push_back(buildDistanceConstraint(
-                v0, v2, (mesh->vertices[v0] - mesh->vertices[v2]).norm()
+        cubeMesh->constraints.push_back(buildDistanceConstraint(
+                v0, v2, (cubeMesh->vertices[v0] - cubeMesh->vertices[v2]).norm()
         ));
-        constraints.push_back(buildDistanceConstraint(
-                v1, v2, (mesh->vertices[v1] - mesh->vertices[v2]).norm()
+        cubeMesh->constraints.push_back(buildDistanceConstraint(
+                v1, v2, (cubeMesh->vertices[v1] - cubeMesh->vertices[v2]).norm()
         ));
     }
-
-    cout << constraints.size() << " constraints" << endl;
 
     reset();
 }
 
 Simulation::~Simulation() {
     delete camera;
-    delete mesh;
-    delete plane;
+    delete cubeMesh;
+    delete planeMesh;
 }
 
 void Simulation::reset() {
-    mesh->vertices = mesh->initialVertices;
+    cubeMesh->vertices = cubeMesh->initialVertices;
 
-    mesh->velocities.clear();
-    mesh->inverseMasses.clear();
+    cubeMesh->velocities.clear();
+    cubeMesh->inverseMasses.clear();
 
     Vector3f initialVelocity(1.0f, 0.0f, -1.0f);
     float vertexMass = 1.0f;
-    for (int i = 0; i < mesh->numVertices; i++) {
-        mesh->velocities.push_back(initialVelocity);
-        mesh->inverseMasses.push_back(1.0f / vertexMass);
+    for (int i = 0; i < cubeMesh->numVertices; i++) {
+        cubeMesh->velocities.push_back(initialVelocity);
+        cubeMesh->inverseMasses.push_back(1.0f / vertexMass);
     }
-
-    mesh->vertices[3] = mesh->vertices[3] + Vector3f(1, 0, 0);
 }
 
 Constraint Simulation::buildFixedConstraint(int index) {
@@ -77,7 +79,7 @@ Constraint Simulation::buildFixedConstraint(int index) {
     constraint.type = FIXED;
     constraint.indices.push_back(index);
     constraint.cardinatlity = 1;
-    constraint.target = mesh->initialVertices[index];
+    constraint.target = cubeMesh->initialVertices[index];
     constraint.stiffness = 1.0f;
     return constraint;
 }
@@ -94,7 +96,10 @@ Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float dis
 }
 
 void Simulation::update() {
+    simulate(cubeMesh);
+}
 
+void Simulation::simulate(Mesh* mesh) {
     // Apply external forces
     for (int i = 0; i < mesh->numVertices; i++) {
         mesh->velocities[i] += timeStep * Vector3f(0, -gravity, 0);
@@ -103,7 +108,7 @@ void Simulation::update() {
     // Dampen velocities
     for (int i = 0; i < mesh->numVertices; i++) {
         // TODO
-         mesh->velocities[i] *= velocityDamping;
+        mesh->velocities[i] *= velocityDamping;
     }
 
     mesh->estimatePositions.clear();
@@ -119,7 +124,7 @@ void Simulation::update() {
 
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
-        for (Constraint constraint : constraints) {
+        for (Constraint constraint : cubeMesh->constraints) {
 
             SparseMatrix<float> coefficients(constraint.cardinatlity, constraint.cardinatlity);
 
@@ -197,8 +202,10 @@ void Simulation::render() {
     r.block(0, 0, 3, 3) = q.toRotationMatrix();
     Matrix4f modelMatrix = Matrix4f::Identity() * r;
 
-    mesh->render(camera, modelMatrix);
-    plane->render(camera, modelMatrix);
+    cubeMesh->render(camera, modelMatrix);
+    planeMesh->render(camera, modelMatrix);
+    flagPoleMesh->render(camera, modelMatrix);
+    flagMesh->render(camera, modelMatrix);
 }
 
 void Simulation::renderGUI() {

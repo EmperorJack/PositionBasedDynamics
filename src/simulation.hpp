@@ -21,6 +21,7 @@ public:
     Constraint buildDistanceConstraint(int indexA, int indexB, float distance);
 
     void update();
+    void simulate(Mesh* mesh);
     void render();
     void renderGUI();
 
@@ -39,11 +40,12 @@ private:
     Camera* camera;
 
     // Objects
-    Mesh* mesh;
-    Mesh* plane;
+    Mesh* cubeMesh;
+    Mesh* planeMesh;
+    Mesh* flagPoleMesh;
+    Mesh* flagMesh;
 
     // Solver
-    vector<Constraint> constraints;
     SparseLU<SparseMatrix<float>> solver;
 
 };
