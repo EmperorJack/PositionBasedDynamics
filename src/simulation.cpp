@@ -78,6 +78,7 @@ Constraint Simulation::buildFixedConstraint(int index) {
     constraint.indices.push_back(index);
     constraint.cardinatlity = 1;
     constraint.target = mesh->initialVertices[index];
+    constraint.stiffness = 1.0f;
     return constraint;
 }
 
@@ -88,6 +89,7 @@ Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float dis
     constraint.indices.push_back(indexB);
     constraint.cardinatlity = 2;
     constraint.distance = distance;
+    constraint.stiffness = 1.0f;
     return constraint;
 }
 
@@ -119,25 +121,25 @@ void Simulation::update() {
     for (int iteration = 0; iteration < solverIterations; iteration++) {
         for (Constraint constraint : constraints) {
 
-            SparseMatrix<float> A(constraint.cardinatlity, constraint.cardinatlity);
+            SparseMatrix<float> coefficients(constraint.cardinatlity, constraint.cardinatlity);
 
             if (constraint.type == FIXED) {
-                A.coeffRef(0, 0) = -1.0f;
+                coefficients.coeffRef(0, 0) = -1.0f;
             } else if (constraint.type == DISTANCE) {
                 float w1 = mesh->inverseMasses[constraint.indices[0]];
                 float w2 = mesh->inverseMasses[constraint.indices[1]];
-                A.coeffRef(0, 0) = -1 / (w1 / (w1 + w2));
-                A.coeffRef(1, 1) = 1 / (w2 / (w1 + w2));
+                coefficients.coeffRef(0, 0) = -1 / (w1 / (w1 + w2));
+                coefficients.coeffRef(1, 1) = 1 / (w2 / (w1 + w2));
             }
 
-            solver.compute(A);
+            solver.compute(coefficients);
 
             if (solver.info() != Success) {
                 std::cout << "Factorisation failed" << std::endl;
                 exit(-1);
             }
 
-            MatrixXf B(constraint.cardinatlity, 3);
+            MatrixXf RHS(constraint.cardinatlity, 3);
             if (constraint.type == FIXED) {
                 Vector3f p1 = mesh->estimatePositions[constraint.indices[0]];
                 Vector3f p2 = constraint.target;
@@ -145,7 +147,7 @@ void Simulation::update() {
                 float a = (p1 - p2).norm();
                 Vector3f b = (p1 - p2) / (p1 - p2).norm();
 
-                B.row(0) = a * b;
+                RHS.row(0) = a * b;
             } else if (constraint.type == DISTANCE) {
                 Vector3f p1 = mesh->estimatePositions[constraint.indices[0]];
                 Vector3f p2 = mesh->estimatePositions[constraint.indices[1]];
@@ -153,11 +155,11 @@ void Simulation::update() {
                 float a = ((p1 - p2).norm() - constraint.distance);
                 Vector3f b = (p1 - p2) / (p1 - p2).norm();
 
-                B.row(0) = a * b;
-                B.row(1) = a * b;
+                RHS.row(0) = a * b;
+                RHS.row(1) = a * b;
             }
 
-            MatrixXf X = solver.solve(B);
+            MatrixXf displacements = solver.solve(RHS);
 
             if (solver.info() != Success) {
                 std::cout << "Solving failed" << std::endl;
@@ -166,7 +168,9 @@ void Simulation::update() {
 
             for (int i = 0; i < constraint.cardinatlity; i++) {
                 int vertexIndex = constraint.indices[i];
-                mesh->estimatePositions[vertexIndex] += X.row(i);
+                Vector3f displacement = displacements.row(i);
+                float stiffness = 1.0f - pow(1.0f - constraint.stiffness, 1.0f / solverIterations);
+                mesh->estimatePositions[vertexIndex] += stiffness * displacement;
             }
         }
     }
@@ -201,7 +205,7 @@ void Simulation::renderGUI() {
     ImGui::Begin("Simulator");
 
     ImGui::Text("Solver Iterations");
-    ImGui::SliderInt("##solverIterations", &solverIterations, 1, 100, "%.0f");
+    ImGui::SliderInt("##solverIterations", &solverIterations, 1, 50, "%.0f");
 
     ImGui::Text("Timestep");
     ImGui::SliderFloat("##timeStep", &timeStep, 0.01f, 1.0f, "%.2f");

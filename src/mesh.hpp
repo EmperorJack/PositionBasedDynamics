@@ -34,7 +34,8 @@ struct Constraint {
     vector<int> indices;
     ConstraintType type;
     Vector3f target;
-    float distance;
+    float distance = 0.0f;
+    float stiffness = 1.0f;
 };
 
 class Mesh {
