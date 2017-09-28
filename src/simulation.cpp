@@ -135,7 +135,7 @@ void Simulation::simulate(Mesh* mesh) {
     for (int iteration = 0; iteration < solverIterations; iteration++) {
         for (Constraint constraint : mesh->constraints) {
 
-            SparseMatrix<float> coefficients(constraint.cardinatlity, constraint.cardinatlity);
+            MatrixXf coefficients(constraint.cardinatlity, constraint.cardinatlity);
 
             if (constraint.type == FIXED) {
                 coefficients.coeffRef(0, 0) = -1.0f;
@@ -146,12 +146,6 @@ void Simulation::simulate(Mesh* mesh) {
                 coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
             }
 
-            solver.compute(coefficients);
-
-            if (solver.info() != Success) {
-                std::cout << "Factorisation failed" << std::endl;
-                exit(-1);
-            }
 
             MatrixXf RHS(constraint.cardinatlity, 3);
             if (constraint.type == FIXED) {
@@ -173,12 +167,7 @@ void Simulation::simulate(Mesh* mesh) {
                 RHS.row(1) = a * b;
             }
 
-            MatrixXf displacements = solver.solve(RHS);
-
-            if (solver.info() != Success) {
-                std::cout << "Solving failed" << std::endl;
-                exit(-1);
-            }
+            MatrixXf displacements = coefficients.ldlt().solve(RHS);
 
             for (int i = 0; i < constraint.cardinatlity; i++) {
                 int vertexIndex = constraint.indices[i];

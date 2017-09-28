@@ -30,7 +30,7 @@ public:
     const float EPSILON = 0.000001f;
 
     // Variables
-    int solverIterations = 5;
+    int solverIterations = 10;
     float timeStep = 0.05f;
     float gravity = 0.981f;
     float windSpeed = 1.0f;
@@ -51,9 +51,6 @@ private:
     Mesh* flag;
     Mesh* flagPole2;
     Mesh* flagHigh;
-
-    // Solver
-    SparseLU<SparseMatrix<float>> solver;
 
 };
 
