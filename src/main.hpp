@@ -13,6 +13,9 @@
 #define SCREEN_HEIGHT 720
 #endif
 
+// Constants
+const float EPSILON = 0.000001f;
+
 // Paths
 static const char* SHADER_PATH = "resources/shaders/";
 

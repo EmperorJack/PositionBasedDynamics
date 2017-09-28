@@ -9,11 +9,14 @@
 #include <string>
 #include <vector>
 #include <Eigen>
-#include <camera.hpp>
 #include <GL/glew.h>
+#include <camera.hpp>
+#include <constraint.hpp>
 
 using namespace std;
 using namespace Eigen;
+
+class Constraint;
 
 struct Vertex {
     int p;
@@ -40,24 +43,11 @@ struct Triangle {
     Vertex v[3];
 };
 
-enum ConstraintType {
-    FIXED,
-    DISTANCE
-};
-
-struct Constraint {
-    int cardinatlity;
-    vector<int> indices;
-    ConstraintType type;
-    Vector3f target;
-    float distance = 0.0f;
-    float stiffness = 1.0f;
-};
-
 class Mesh {
 
 public:
     Mesh(string filename, Vector3f colour);
+    ~Mesh();
     void reset();
     void render(Camera* camera, Matrix4f transform);
 
@@ -79,7 +69,7 @@ public:
     vector<Vector3f> velocities;
     vector<float> inverseMasses;
     vector<Vector3f> estimatePositions;
-    vector<Constraint> constraints;
+    vector<Constraint*> constraints;
     bool gravityAffected = false;
     bool windAffected = false;
 

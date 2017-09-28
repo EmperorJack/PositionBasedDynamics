@@ -28,6 +28,12 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
     inverseMasses.resize((size_t) numVertices, 1.0f);
 }
 
+Mesh::~Mesh() {
+    for (Constraint* constraint : constraints) {
+        delete constraint;
+    }
+}
+
 void Mesh::generateSurfaceNormals() {
     surfaceNormals.clear();
     for (int i = 0; i < triangles.size(); i++) {

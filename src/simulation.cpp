@@ -66,40 +66,6 @@ void Simulation::reset() {
     flagHigh->reset();
 }
 
-void Simulation::buildEdgeConstraints(Mesh* mesh, float stiffness) {
-    for (Edge edge : mesh->edges) {
-        int v0 = edge.v[0].p;
-        int v1 = edge.v[1].p;
-
-        mesh->constraints.push_back(buildDistanceConstraint(
-                v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm(), stiffness
-        ));
-    }
-}
-
-Constraint Simulation::buildFixedConstraint(Mesh* mesh, int index, Vector3f target) {
-    mesh->inverseMasses[index] = EPSILON;
-
-    Constraint constraint;
-    constraint.type = FIXED;
-    constraint.indices.push_back(index);
-    constraint.cardinatlity = 1;
-    constraint.target = target;
-    constraint.stiffness = 1.0f;
-    return constraint;
-}
-
-Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float distance, float stiffness) {
-    Constraint constraint;
-    constraint.type = DISTANCE;
-    constraint.indices.push_back(indexA);
-    constraint.indices.push_back(indexB);
-    constraint.cardinatlity = 2;
-    constraint.distance = distance;
-    constraint.stiffness = stiffness;
-    return constraint;
-}
-
 void Simulation::update() {
     simulate(testCube);
     simulate(flag);
@@ -133,48 +99,8 @@ void Simulation::simulate(Mesh* mesh) {
 
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
-        for (Constraint constraint : mesh->constraints) {
-
-            MatrixXf coefficients(constraint.cardinatlity, constraint.cardinatlity);
-
-            if (constraint.type == FIXED) {
-                coefficients.coeffRef(0, 0) = -1.0f;
-            } else if (constraint.type == DISTANCE) {
-                float w1 = mesh->inverseMasses[constraint.indices[0]];
-                float w2 = mesh->inverseMasses[constraint.indices[1]];
-                coefficients.coeffRef(0, 0) = -1.0f / (w1 / (w1 + w2));
-                coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
-            }
-
-
-            MatrixXf RHS(constraint.cardinatlity, 3);
-            if (constraint.type == FIXED) {
-                Vector3f p1 = mesh->estimatePositions[constraint.indices[0]];
-                Vector3f p2 = constraint.target;
-
-                float a = (p1 - p2).norm();
-                Vector3f b = (p1 - p2) / ((p1 - p2).norm() + EPSILON);
-
-                RHS.row(0) = a * b;
-            } else if (constraint.type == DISTANCE) {
-                Vector3f p1 = mesh->estimatePositions[constraint.indices[0]];
-                Vector3f p2 = mesh->estimatePositions[constraint.indices[1]];
-
-                float a = ((p1 - p2).norm() - constraint.distance);
-                Vector3f b = (p1 - p2) / ((p1 - p2).norm() + EPSILON);
-
-                RHS.row(0) = a * b;
-                RHS.row(1) = a * b;
-            }
-
-            MatrixXf displacements = coefficients.ldlt().solve(RHS);
-
-            for (int i = 0; i < constraint.cardinatlity; i++) {
-                int vertexIndex = constraint.indices[i];
-                Vector3f displacement = displacements.row(i);
-                float stiffness = 1.0f - pow(1.0f - constraint.stiffness, 1.0f / solverIterations);
-                mesh->estimatePositions[vertexIndex] += stiffness * displacement;
-            }
+        for (Constraint* constraint : mesh->constraints) {
+            constraint->project(solverIterations);
         }
     }
 

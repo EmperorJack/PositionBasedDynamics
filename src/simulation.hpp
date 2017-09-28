@@ -17,17 +17,10 @@ public:
 
     void reset();
 
-    void buildEdgeConstraints(Mesh* mesh, float stiffness);
-    Constraint buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
-    Constraint buildDistanceConstraint(int indexA, int indexB, float distance, float stiffness);
-
     void update();
     void simulate(Mesh* mesh);
     void render();
     void renderGUI();
-
-    // Constants
-    const float EPSILON = 0.000001f;
 
     // Variables
     int solverIterations = 10;
