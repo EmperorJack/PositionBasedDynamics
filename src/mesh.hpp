@@ -5,6 +5,7 @@
 #ifndef POSITIONBASEDDYNAMICS_MESH_HPP
 #define POSITIONBASEDDYNAMICS_MESH_HPP
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -63,6 +64,7 @@ public:
     vector<Vector3f> normals;
     set<Edge, EdgeCompare> edges;
     vector<Triangle> triangles;
+    map<Edge, vector<Triangle>, EdgeCompare> adjacentTriangles;
     std::vector<Vector3f> surfaceNormals;
 
     // Simulation fields

@@ -193,16 +193,24 @@ void Mesh::parseObjFile(string filename) {
 
                 // If we have 3 vertices, construct a triangle
                 if (verts.size() >= 3) {
-                    Triangle tri;
-                    tri.v[0] = verts[0];
-                    tri.v[1] = verts[1];
-                    tri.v[2] = verts[2];
-                    triangles.push_back(tri);
+                    Triangle triangle;
+                    triangle.v[0] = verts[0];
+                    triangle.v[1] = verts[1];
+                    triangle.v[2] = verts[2];
+                    triangles.push_back(triangle);
 
                     // Construct edges
-                    edges.insert(Edge(verts[0], verts[1]));
-                    edges.insert(Edge(verts[0], verts[2]));
-                    edges.insert(Edge(verts[1], verts[2]));
+                    Edge e1 = Edge(verts[0], verts[1]);
+                    Edge e2 = Edge(verts[0], verts[2]);
+                    Edge e3 = Edge(verts[1], verts[2]);
+                    edges.insert(e1);
+                    edges.insert(e2);
+                    edges.insert(e3);
+
+                    // Add to adjacent triangles
+                    adjacentTriangles[e1].push_back(triangle);
+                    adjacentTriangles[e2].push_back(triangle);
+                    adjacentTriangles[e3].push_back(triangle);
                 }
             }
         }
