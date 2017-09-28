@@ -25,6 +25,7 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
 
     // Setup simulation
     reset();
+    inverseMasses.resize((size_t) numVertices, 1.0f);
 }
 
 void Mesh::generateSurfaceNormals() {
@@ -42,14 +43,9 @@ void Mesh::reset() {
     vertices = initialVertices;
 
     velocities.clear();
-    inverseMasses.clear();
 
     Vector3f initialVelocity(1.0f, 0.0f, -1.0f);
-    float vertexMass = 1.0f;
-    for (int i = 0; i < numVertices; i++) {
-        velocities.push_back(initialVelocity);
-        inverseMasses.push_back(1.0f / vertexMass);
-    }
+    velocities.resize((size_t) numVertices, initialVelocity);
 }
 
 void Mesh::render(Camera* camera, Matrix4f transform) {
@@ -197,25 +193,14 @@ void Mesh::parseObjFile(string filename) {
                     tri.v[2] = verts[2];
                     triangles.push_back(tri);
 
-//                    cout << verts[0].p << ", " << verts[1].p << ", " << verts[2].p << endl << "~~~" << endl;
-
                     // Construct edges
-                    edges.push_back(Edge(verts[0], verts[1]));
-                    edges.push_back(Edge(verts[0], verts[2]));
-                    edges.push_back(Edge(verts[1], verts[2]));
+                    edges.insert(Edge(verts[0], verts[1]));
+                    edges.insert(Edge(verts[0], verts[2]));
+                    edges.insert(Edge(verts[1], verts[2]));
                 }
             }
         }
     }
-
-    // TODO remove duplicate edges
-//    cout << "~~EDGES~~" << endl;
-
-    for (Edge e : edges) {
-//        cout << e.v[0].p << ", " << e.v[1].p << endl << "~~~" << endl;
-    }
-
-//    cout << edges.size() << endl;
 
     generateSurfaceNormals();
 }

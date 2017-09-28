@@ -18,7 +18,7 @@ public:
     void reset();
 
     void buildEdgeConstraints(Mesh* mesh, float stiffness);
-    Constraint buildFixedConstraint(int index, Vector3f target);
+    Constraint buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
     Constraint buildDistanceConstraint(int indexA, int indexB, float distance, float stiffness);
 
     void update();
@@ -26,9 +26,12 @@ public:
     void render();
     void renderGUI();
 
+    // Constants
+    const float EPSILON = 0.000001f;
+
     // Variables
-    int solverIterations = 10;
-    float timeStep = 0.1f;
+    int solverIterations = 5;
+    float timeStep = 0.05f;
     float gravity = 0.981f;
     float windSpeed = 1.0f;
     float velocityDamping = 1.0f;
@@ -46,6 +49,8 @@ private:
     Mesh* plane;
     Mesh* flagPole;
     Mesh* flag;
+    Mesh* flagPole2;
+    Mesh* flagHigh;
 
     // Solver
     SparseLU<SparseMatrix<float>> solver;

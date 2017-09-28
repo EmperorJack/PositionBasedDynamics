@@ -29,6 +29,13 @@ struct Edge {
     Vertex v[2];
 };
 
+struct EdgeCompare {
+    std::less<std::pair<int, int>> lessComparator;
+    bool operator() (const Edge &l, const Edge &r) {
+        return lessComparator(minmax(l.v[0].p, l.v[1].p), minmax(r.v[0].p, r.v[1].p));
+    }
+};
+
 struct Triangle {
     Vertex v[3];
 };
@@ -64,7 +71,7 @@ public:
     vector<Vector3f> vertices;
     vector<Vector2f> uvs;
     vector<Vector3f> normals;
-    vector<Edge> edges;
+    set<Edge, EdgeCompare> edges;
     vector<Triangle> triangles;
     std::vector<Vector3f> surfaceNormals;
 

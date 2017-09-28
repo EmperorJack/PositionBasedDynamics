@@ -18,29 +18,36 @@ Simulation::Simulation() {
     // Setup objects
     Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
     testCube = new Mesh("../resources/models/cube.obj", meshColour);
-    testCube->position = Vector3f(-1.0f - 5.0f, 0.0f, -1.0f - 5.0f);
     testCube->gravityAffected = true;
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
     plane = new Mesh("../resources/models/plane.obj", planeColour);
-    plane->position = Vector3f(0, -3, 0);
 
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
     flagPole = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
+    flagPole2 = new Mesh("../resources/models/flagPole2.obj", flagPoleColour);
 
     Vector3f flagColour = { 0.6f, 0.0f, 0.0f };
     flag = new Mesh("../resources/models/flag.obj", flagColour);
     flag->gravityAffected = true;
     flag->windAffected = true;
+    flagHigh = new Mesh("../resources/models/flagHigh.obj", flagColour);
+    flagHigh->gravityAffected = true;
+    flagHigh->windAffected = true;
 
     // Setup constraints
-    testCube->constraints.push_back(buildFixedConstraint(3, testCube->initialVertices[3]));
+    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
     buildEdgeConstraints(testCube, 1.0f);
 
     for (int i = 0; i < 7; i++) {
-        flag->constraints.push_back(buildFixedConstraint(i, flag->initialVertices[i]));
+        flag->constraints.push_back(buildFixedConstraint(flag, i, flag->initialVertices[i]));
     }
-    buildEdgeConstraints(flag, 0.5f);
+    buildEdgeConstraints(flag, 0.999f);
+
+    for (int i = 0; i < 14; i++) {
+        flagHigh->constraints.push_back(buildFixedConstraint(flagHigh, i, flagHigh->initialVertices[i]));
+    }
+    buildEdgeConstraints(flagHigh, 0.999f);
 }
 
 Simulation::~Simulation() {
@@ -49,11 +56,14 @@ Simulation::~Simulation() {
     delete plane;
     delete flagPole;
     delete flag;
+    delete flagPole2;
+    delete flagHigh;
 }
 
 void Simulation::reset() {
     testCube->reset();
     flag->reset();
+    flagHigh->reset();
 }
 
 void Simulation::buildEdgeConstraints(Mesh* mesh, float stiffness) {
@@ -67,7 +77,9 @@ void Simulation::buildEdgeConstraints(Mesh* mesh, float stiffness) {
     }
 }
 
-Constraint Simulation::buildFixedConstraint(int index, Vector3f target) {
+Constraint Simulation::buildFixedConstraint(Mesh* mesh, int index, Vector3f target) {
+    mesh->inverseMasses[index] = EPSILON;
+
     Constraint constraint;
     constraint.type = FIXED;
     constraint.indices.push_back(index);
@@ -91,6 +103,7 @@ Constraint Simulation::buildDistanceConstraint(int indexA, int indexB, float dis
 void Simulation::update() {
     simulate(testCube);
     simulate(flag);
+    simulate(flagHigh);
 }
 
 void Simulation::simulate(Mesh* mesh) {
@@ -98,7 +111,7 @@ void Simulation::simulate(Mesh* mesh) {
     // Apply external forces
     for (int i = 0; i < mesh->numVertices; i++) {
         if (mesh->gravityAffected) mesh->velocities[i] += timeStep * Vector3f(0, -gravity, 0);
-        if (mesh->windAffected) mesh->velocities[i] += timeStep * Vector3f(-windSpeed, 0, 0);
+        if (mesh->windAffected) mesh->velocities[i] += timeStep * Vector3f(0, 0, -windSpeed);
     }
 
     // Dampen velocities
@@ -129,8 +142,8 @@ void Simulation::simulate(Mesh* mesh) {
             } else if (constraint.type == DISTANCE) {
                 float w1 = mesh->inverseMasses[constraint.indices[0]];
                 float w2 = mesh->inverseMasses[constraint.indices[1]];
-                coefficients.coeffRef(0, 0) = -1 / (w1 / (w1 + w2));
-                coefficients.coeffRef(1, 1) = 1 / (w2 / (w1 + w2));
+                coefficients.coeffRef(0, 0) = -1.0f / (w1 / (w1 + w2));
+                coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
             }
 
             solver.compute(coefficients);
@@ -146,7 +159,7 @@ void Simulation::simulate(Mesh* mesh) {
                 Vector3f p2 = constraint.target;
 
                 float a = (p1 - p2).norm();
-                Vector3f b = (p1 - p2) / (p1 - p2).norm();
+                Vector3f b = (p1 - p2) / ((p1 - p2).norm() + EPSILON);
 
                 RHS.row(0) = a * b;
             } else if (constraint.type == DISTANCE) {
@@ -154,7 +167,7 @@ void Simulation::simulate(Mesh* mesh) {
                 Vector3f p2 = mesh->estimatePositions[constraint.indices[1]];
 
                 float a = ((p1 - p2).norm() - constraint.distance);
-                Vector3f b = (p1 - p2) / (p1 - p2).norm();
+                Vector3f b = (p1 - p2) / ((p1 - p2).norm() + EPSILON);
 
                 RHS.row(0) = a * b;
                 RHS.row(1) = a * b;
@@ -202,6 +215,8 @@ void Simulation::render() {
     plane->render(camera, modelMatrix);
     flagPole->render(camera, modelMatrix);
     flag->render(camera, modelMatrix);
+    flagPole2->render(camera, modelMatrix);
+    flagHigh->render(camera, modelMatrix);
 }
 
 void Simulation::renderGUI() {
@@ -211,7 +226,7 @@ void Simulation::renderGUI() {
     ImGui::SliderInt("##solverIterations", &solverIterations, 1, 50, "%.0f");
 
     ImGui::Text("Timestep");
-    ImGui::SliderFloat("##timeStep", &timeStep, 0.01f, 1.0f, "%.2f");
+    ImGui::SliderFloat("##timeStep", &timeStep, 0.001f, 0.1f, "%.3f");
 
     ImGui::Text("Gravity");
     ImGui::SliderFloat("##gravity", &gravity, 0.01f, 10.0f, "%.2f");
