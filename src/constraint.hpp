@@ -20,11 +20,13 @@ class Constraint {
 public:
     Constraint(Mesh* mesh, int cardinality) :
             mesh(mesh), cardinality(cardinality) {}
+    void computeWeights();
     virtual void project(int solverIterations) {}
 
     int cardinality;
     vector<int> indices;
     Mesh* mesh;
+    MatrixXf coefficients;
 
 };
 

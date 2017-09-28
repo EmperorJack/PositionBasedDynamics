@@ -29,7 +29,23 @@ DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, 
     DistanceConstraint* constraint = new DistanceConstraint(mesh, 2, stiffness, distance);
     constraint->indices.push_back(indexA);
     constraint->indices.push_back(indexB);
+
+    constraint->computeWeights();
     return constraint;
+}
+
+void Constraint::computeWeights() {
+    coefficients.resize(cardinality, cardinality);
+
+    float denominator = 0.0f;
+    for (int i = 0; i < cardinality; i++) {
+        denominator += mesh->inverseMasses[indices[i]];
+    }
+
+    for (int i = 0; i < cardinality; i++) {
+        float wi = mesh->inverseMasses[indices[i]];
+        coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
+    }
 }
 
 void FixedConstraint::project(int solverIterations) {
@@ -37,13 +53,6 @@ void FixedConstraint::project(int solverIterations) {
 }
 
 void DistanceConstraint::project(int solverIterations) {
-    MatrixXf coefficients(cardinality, cardinality);
-
-    float w1 = mesh->inverseMasses[indices[0]];
-    float w2 = mesh->inverseMasses[indices[1]];
-    coefficients.coeffRef(0, 0) = 1.0f / (w1 / (w1 + w2));
-    coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
-
     MatrixXf RHS(cardinality, 3);
 
     Vector3f p1 = mesh->estimatePositions[indices[0]];
