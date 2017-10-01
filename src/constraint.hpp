@@ -72,6 +72,7 @@ private:
 
 // Constraint building
 void buildEdgeConstraints(Mesh* mesh, float stiffness);
+void buildBendConstraints(Mesh* mesh, float stiffness);
 FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
 DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance, float stiffness);
 BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float stiffness, float angle);

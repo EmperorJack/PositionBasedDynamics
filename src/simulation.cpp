@@ -42,16 +42,14 @@ Simulation::Simulation() {
     for (int i = 0; i < 7; i++) {
         flag->constraints.push_back(buildFixedConstraint(flag, i, flag->initialVertices[i]));
     }
-    buildEdgeConstraints(flag, 0.999f);
+    buildEdgeConstraints(flag, 0.95f);
+    buildBendConstraints(flag, 0.5f);
 
     for (int i = 0; i < 14; i++) {
         flagHigh->constraints.push_back(buildFixedConstraint(flagHigh, i, flagHigh->initialVertices[i]));
     }
-    buildEdgeConstraints(flagHigh, 0.999f);
-
-    //plane->constraints.push_back(buildBendConstraint(plane, 2, 1, 0, 3, 1.0f, (float) M_PI_2));
-    //plane->constraints.push_back(buildFixedConstraint(plane, 1, plane->initialVertices[1]));
-    //buildEdgeConstraints(plane, 1.0f);
+    buildEdgeConstraints(flagHigh, 0.95f);
+    buildBendConstraints(flagHigh, 0.5f);
 }
 
 Simulation::~Simulation() {
@@ -68,14 +66,12 @@ void Simulation::reset() {
     testCube->reset();
     flag->reset();
     flagHigh->reset();
-    plane->reset();
 }
 
 void Simulation::update() {
     simulate(testCube);
     simulate(flag);
     simulate(flagHigh);
-    //simulate(plane);
 }
 
 void Simulation::simulate(Mesh* mesh) {

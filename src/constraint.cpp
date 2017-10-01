@@ -15,6 +15,36 @@ void buildEdgeConstraints(Mesh* mesh, float stiffness) {
     }
 }
 
+void buildBendConstraints(Mesh* mesh, float stiffness) {
+    for (Edge edge : mesh->edges) {
+        if (mesh->adjacentTriangles[edge].size() != 2) continue;
+
+        Triangle t1 = mesh->adjacentTriangles[edge][0];
+        Triangle t2 = mesh->adjacentTriangles[edge][1];
+
+        int p1 = edge.v[0].p; // Shared vertex 1
+        int p2 = edge.v[1].p; // Shared vertex 2
+
+        int p3;
+        for (Vertex v : t1.v) {
+            int p = v.p;
+            if (p1 != p && p2 != p) p3 = p;
+        }
+
+        int p4;
+        for (Vertex v : t2.v) {
+            int p = v.p;
+            if (p1 != p && p2 != p) p4 = p;
+        }
+
+        Vector3f n1 = mesh->vertices[p2].cross(mesh->vertices[p3]) / mesh->vertices[p2].cross(mesh->vertices[p3]).norm();
+        Vector3f n2 = mesh->vertices[p2].cross(mesh->vertices[p4]) / mesh->vertices[p2].cross(mesh->vertices[p4]).norm();
+        float d = n1.dot(n2);
+
+        mesh->constraints.push_back(buildBendConstraint(mesh, p1, p2, p3, p4, stiffness, acosf(d)));
+    }
+}
+
 FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target) {
     mesh->inverseMasses[index] = EPSILON;
 
@@ -80,18 +110,18 @@ void DistanceConstraint::project(int solverIterations) {
 }
 
 void BendConstraint::preCompute() {
-    coefficients.resize(cardinality, cardinality);
-    coefficients.setZero();
-
-    float denominator = 0.0f;
-    for (int i = 0; i < cardinality; i++) {
-        denominator += mesh->inverseMasses[indices[i]];
-    }
-
-    for (int i = 0; i < cardinality; i++) {
-        float wi = mesh->inverseMasses[indices[i]];
-        coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
-    }
+//    coefficients.resize(cardinality, cardinality);
+//    coefficients.setZero();
+//
+//    float denominator = 0.0f;
+//    for (int i = 0; i < cardinality; i++) {
+//        denominator += mesh->inverseMasses[indices[i]];
+//    }
+//
+//    for (int i = 0; i < cardinality; i++) {
+//        float wi = mesh->inverseMasses[indices[i]];
+//        coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
+//    }
 }
 
 void BendConstraint::project(int solverIterations) {
@@ -113,7 +143,21 @@ void BendConstraint::project(int solverIterations) {
     Vector3f q1 = -q2 - q3 - q4;
 
     // Compute coefficient matrix
+    coefficients.resize(cardinality, cardinality);
+    coefficients.setZero();
+
+    float denominator = 0.0f;
+    for (int i = 0; i < cardinality; i++) {
+        denominator += mesh->inverseMasses[indices[i]];
+    }
+
+    for (int i = 0; i < cardinality; i++) {
+        float wi = mesh->inverseMasses[indices[i]];
+        coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
+    }
+
     float qSum = q1.squaredNorm() + q2.squaredNorm() + q3.squaredNorm() + q4.squaredNorm();
+
     for (int i = 0; i < cardinality; i++) {
         coefficients.coeffRef(i, i) *= qSum;
     }
