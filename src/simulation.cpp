@@ -19,6 +19,7 @@ Simulation::Simulation() {
     Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
     Mesh* testCube = new Mesh("../resources/models/cube.obj", meshColour);
     testCube->gravityAffected = true;
+    testCube->isRigidBody = true;
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
     Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
@@ -37,19 +38,19 @@ Simulation::Simulation() {
 
     // Setup constraints
     testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
-    buildEdgeConstraints(testCube, 1.0f);
+    buildEdgeConstraints(testCube);
 
     for (int i = 0; i < 7; i++) {
         flag->constraints.push_back(buildFixedConstraint(flag, i, flag->initialVertices[i]));
     }
-    buildEdgeConstraints(flag, 0.95f);
-    buildBendConstraints(flag, 0.5f);
+    buildEdgeConstraints(flag);
+    buildBendConstraints(flag);
 
     for (int i = 0; i < 14; i++) {
         flagHigh->constraints.push_back(buildFixedConstraint(flagHigh, i, flagHigh->initialVertices[i]));
     }
-    buildEdgeConstraints(flagHigh, 0.95f);
-    buildBendConstraints(flagHigh, 0.5f);
+    buildEdgeConstraints(flagHigh);
+    buildBendConstraints(flagHigh);
 
     // Build object lists
     staticObjects.push_back(plane);
@@ -116,6 +117,12 @@ void Simulation::simulate(Mesh* mesh) {
     // Generate collision constraints
     // TODO
 
+    // Setup params
+    Params params;
+    params.solverIterations = solverIterations;
+    params.stretchFactor = stretchFactor;
+    params.bendFactor = bendFactor;
+
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
         //#pragma omp parallel for
@@ -123,7 +130,7 @@ void Simulation::simulate(Mesh* mesh) {
         //    mesh->constraints[c]->project(solverIterations);
         //}
         for (Constraint* constraint : mesh->constraints) {
-            constraint->project(solverIterations);
+            constraint->project(params);
         }
     }
 
@@ -180,6 +187,12 @@ void Simulation::renderGUI() {
 
     ImGui::Text("Velocity Damping");
     ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");
+
+    ImGui::Text("Stretch Factor");
+    ImGui::SliderFloat("##stretchFactor", &stretchFactor, 0.0f, 1.0f, "%.2f");
+
+    ImGui::Text("Bend Factor");
+    ImGui::SliderFloat("##bendFactor", &bendFactor, 0.0f, 1.0f, "%.2f");
 
     ImGui::Text("Wireframe");
     ImGui::Checkbox("##wireframe", &wireframe);

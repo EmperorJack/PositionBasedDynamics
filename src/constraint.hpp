@@ -15,13 +15,19 @@ using namespace Eigen;
 // Forward declaration
 class Mesh;
 
+struct Params {
+    int solverIterations;
+    float stretchFactor;
+    float bendFactor;
+};
+
 class Constraint {
 
 public:
     Constraint(Mesh* mesh, int cardinality) :
             mesh(mesh), cardinality(cardinality) {}
     virtual void preCompute() {}
-    virtual void project(int solverIterations) {}
+    virtual void project(Params params) {}
 
     int cardinality;
     vector<int> indices;
@@ -35,7 +41,7 @@ class FixedConstraint : public Constraint {
 public:
     FixedConstraint(Mesh* mesh, int cardinality, Vector3f target) :
             Constraint(mesh, cardinality), target(target) {}
-    void project(int solverIterations);
+    void project(Params params);
 
 private:
     Vector3f target;
@@ -45,13 +51,12 @@ private:
 class DistanceConstraint : public Constraint {
 
 public:
-    DistanceConstraint(Mesh* mesh, int cardinality, float stiffness, float distance) :
-            Constraint(mesh, cardinality), stiffness(stiffness), distance(distance) {}
+    DistanceConstraint(Mesh* mesh, int cardinality, float distance) :
+            Constraint(mesh, cardinality), distance(distance) {}
     void preCompute();
-    void project(int solverIterations);
+    void project(Params params);
 
 private:
-    float stiffness;
     float distance;
 
 };
@@ -59,22 +64,21 @@ private:
 class BendConstraint : public Constraint {
 
 public:
-    BendConstraint(Mesh* mesh, int cardinality, float stiffness, float angle) :
-            Constraint(mesh, cardinality), stiffness(stiffness), angle(angle) {}
+    BendConstraint(Mesh* mesh, int cardinality, float angle) :
+            Constraint(mesh, cardinality), angle(angle) {}
     void preCompute();
-    void project(int solverIterations);
+    void project(Params params);
 
 private:
-    float stiffness;
     float angle;
 
 };
 
 // Constraint building
-void buildEdgeConstraints(Mesh* mesh, float stiffness);
-void buildBendConstraints(Mesh* mesh, float stiffness);
+void buildEdgeConstraints(Mesh* mesh);
+void buildBendConstraints(Mesh* mesh);
 FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
-DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance, float stiffness);
-BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float stiffness, float angle);
+DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance);
+BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);
 
 #endif //POSITIONBASEDDYNAMICS_CONSTRAINT_HPP

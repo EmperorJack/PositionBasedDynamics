@@ -97,7 +97,7 @@ void Mesh::render(Camera* camera, Matrix4f transform) {
     glUseProgram(shader);
 
     glUniform3fv(glGetUniformLocation(shader, "materialColour"), 1, colour.data());
-    Vector4f lightPosition = Vector4f(0, 10, 0, 0);
+    Vector4f lightPosition = Vector4f(8, 10, 0, 0);
     lightPosition = modelMatrix * lightPosition;
     glUniform3fv(glGetUniformLocation(shader, "lightPosition"), 1, lightPosition.data());
 

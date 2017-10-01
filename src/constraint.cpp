@@ -6,16 +6,16 @@
 #include <main.hpp>
 #include <constraint.hpp>
 
-void buildEdgeConstraints(Mesh* mesh, float stiffness) {
+void buildEdgeConstraints(Mesh* mesh) {
     for (Edge edge : mesh->edges) {
         int v0 = edge.v[0].p;
         int v1 = edge.v[1].p;
 
-        mesh->constraints.push_back(buildDistanceConstraint(mesh, v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm(), stiffness));
+        mesh->constraints.push_back(buildDistanceConstraint(mesh, v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm()));
     }
 }
 
-void buildBendConstraints(Mesh* mesh, float stiffness) {
+void buildBendConstraints(Mesh* mesh) {
     for (Edge edge : mesh->edges) {
         if (mesh->adjacentTriangles[edge].size() != 2) continue;
 
@@ -41,7 +41,7 @@ void buildBendConstraints(Mesh* mesh, float stiffness) {
         Vector3f n2 = mesh->vertices[p2].cross(mesh->vertices[p4]) / mesh->vertices[p2].cross(mesh->vertices[p4]).norm();
         float d = n1.dot(n2);
 
-        mesh->constraints.push_back(buildBendConstraint(mesh, p1, p2, p3, p4, stiffness, acosf(d)));
+        mesh->constraints.push_back(buildBendConstraint(mesh, p1, p2, p3, p4, acosf(d)));
     }
 }
 
@@ -53,8 +53,8 @@ FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target) {
     return constraint;
 }
 
-DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance, float stiffness) {
-    DistanceConstraint* constraint = new DistanceConstraint(mesh, 2, stiffness, distance);
+DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance) {
+    DistanceConstraint* constraint = new DistanceConstraint(mesh, 2, distance);
     constraint->indices.push_back(indexA);
     constraint->indices.push_back(indexB);
 
@@ -62,8 +62,8 @@ DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, 
     return constraint;
 }
 
-BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float stiffness, float angle) {
-    BendConstraint* constraint = new BendConstraint(mesh, 4, stiffness, angle);
+BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle) {
+    BendConstraint* constraint = new BendConstraint(mesh, 4, angle);
     constraint->indices.push_back(indexA);
     constraint->indices.push_back(indexB);
     constraint->indices.push_back(indexC);
@@ -73,7 +73,7 @@ BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int inde
     return constraint;
 }
 
-void FixedConstraint::project(int solverIterations) {
+void FixedConstraint::project(Params params) {
     mesh->estimatePositions[indices[0]] = target;
 }
 
@@ -87,7 +87,7 @@ void DistanceConstraint::preCompute() {
     coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
 }
 
-void DistanceConstraint::project(int solverIterations) {
+void DistanceConstraint::project(Params params) {
     MatrixXf RHS = MatrixXf::Zero(cardinality, 3);
 
     Vector3f p1 = mesh->estimatePositions[indices[0]];
@@ -104,7 +104,8 @@ void DistanceConstraint::project(int solverIterations) {
     for (int i = 0; i < cardinality; i++) {
         int vertexIndex = indices[i];
         Vector3f displacement = displacements.row(i);
-        float k = 1.0f - pow(1.0f - stiffness, 1.0f / solverIterations);
+        float k = 1.0f;
+        if (!mesh->isRigidBody) k -= pow(1.0f - params.stretchFactor, 1.0f / params.solverIterations);
         mesh->estimatePositions[vertexIndex] += k * displacement;
     }
 }
@@ -124,7 +125,7 @@ void BendConstraint::preCompute() {
 //    }
 }
 
-void BendConstraint::project(int solverIterations) {
+void BendConstraint::project(Params params) {
     MatrixXf RHS = MatrixXf::Zero(cardinality, 3);
 
     Vector3f p1 = mesh->estimatePositions[indices[0]];
@@ -173,7 +174,8 @@ void BendConstraint::project(int solverIterations) {
     for (int i = 0; i < cardinality; i++) {
         int vertexIndex = indices[i];
         Vector3f displacement = displacements.row(i);
-        float k = 1.0f - pow(1.0f - stiffness, 1.0f / solverIterations);
+        float k = 1.0f;
+        if (!mesh->isRigidBody) k -= pow(1.0f - params.bendFactor, 1.0f / params.solverIterations);
         mesh->estimatePositions[vertexIndex] += k * displacement;
     }
 }
