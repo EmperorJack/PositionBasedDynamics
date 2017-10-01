@@ -59,6 +59,8 @@ Simulation::Simulation() {
     simulatedObjects.push_back(testCube);
     simulatedObjects.push_back(flag);
     simulatedObjects.push_back(flagHigh);
+
+    //omp_set_num_threads(8);
 }
 
 Simulation::~Simulation() {
@@ -80,6 +82,10 @@ void Simulation::reset() {
 }
 
 void Simulation::update() {
+    //#pragma omp parallel for
+    //for (int i = 0; i < simulatedObjects.size(); i++) {
+    //    simulate(simulatedObjects[i]);
+    //}
     for (Mesh* mesh : simulatedObjects) {
         simulate(mesh);
     }
@@ -112,6 +118,10 @@ void Simulation::simulate(Mesh* mesh) {
 
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
+        //#pragma omp parallel for
+        //for (int c = 0; c < mesh->constraints.size(); c++) {
+        //    mesh->constraints[c]->project(solverIterations);
+        //}
         for (Constraint* constraint : mesh->constraints) {
             constraint->project(solverIterations);
         }

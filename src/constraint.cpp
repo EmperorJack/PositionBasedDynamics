@@ -99,7 +99,7 @@ void DistanceConstraint::project(int solverIterations) {
     RHS.row(0) = -a * b;
     RHS.row(1) = a * b;
 
-    MatrixXf displacements = coefficients.ldlt().solve(RHS);
+    MatrixXf displacements = coefficients.llt().solve(RHS);
 
     for (int i = 0; i < cardinality; i++) {
         int vertexIndex = indices[i];
@@ -168,7 +168,7 @@ void BendConstraint::project(int solverIterations) {
     RHS.row(2) = -a * q3;
     RHS.row(3) = -a * q4;
 
-    MatrixXf displacements = coefficients.ldlt().solve(RHS);
+    MatrixXf displacements = coefficients.llt().solve(RHS);
 
     for (int i = 0; i < cardinality; i++) {
         int vertexIndex = indices[i];
