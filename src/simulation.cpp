@@ -50,6 +50,8 @@ Simulation::Simulation() {
     buildEdgeConstraints(flagHigh, 0.999f);
 
 //    plane->constraints.push_back(buildBendConstraint(plane, 2, 1, 0, 3, 1.0f, (float) M_PI_2));
+    plane->constraints.push_back(buildFixedConstraint(plane, 1, plane->initialVertices[1]));
+    buildEdgeConstraints(plane, 1.0f);
 }
 
 Simulation::~Simulation() {
@@ -120,7 +122,7 @@ void Simulation::simulate(Mesh* mesh) {
 
 void Simulation::render() {
     camera->setPerspective(45.0f, (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT, 0.1f, 100.0f);
-    camera->lookAt(Vector3f(0, 0, 12), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
+    camera->lookAt(Vector3f(0, 0, 20), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
 
     AngleAxisf pitchAngle(pitch, Vector3f::UnitX());
     AngleAxisf yawAngle(yaw, Vector3f::UnitY());
@@ -129,6 +131,9 @@ void Simulation::render() {
     Matrix4f r = Matrix4f::Identity();
     r.block(0, 0, 3, 3) = q.toRotationMatrix();
     Matrix4f modelMatrix = Matrix4f::Identity() * r;
+
+    if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     testCube->render(camera, modelMatrix);
     plane->render(camera, modelMatrix);
@@ -139,6 +144,8 @@ void Simulation::render() {
 }
 
 void Simulation::renderGUI() {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     ImGui::Begin("Simulator");
 
     ImGui::Text("Solver Iterations");
@@ -155,6 +162,9 @@ void Simulation::renderGUI() {
 
     ImGui::Text("Velocity Damping");
     ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");
+
+    ImGui::Text("Wireframe");
+    ImGui::Checkbox("##wireframe", &wireframe);
 
     ImGui::End();
 }

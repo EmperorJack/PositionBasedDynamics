@@ -28,6 +28,7 @@ public:
     float gravity = 0.981f;
     float windSpeed = 1.0f;
     float velocityDamping = 1.0f;
+    bool wireframe = false;
 
     // Camera variables
     float pitch, yaw, roll;
