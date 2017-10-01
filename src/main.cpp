@@ -92,6 +92,9 @@ int main() {
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetKeyCallback(window, keyCallback);
 
+    // Disable VSync
+    // glfwSwapInterval(0);
+
     // Setup the vertex array object
     GLuint vertexArray;
     glGenVertexArrays(1, &vertexArray);

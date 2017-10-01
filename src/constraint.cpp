@@ -43,26 +43,22 @@ BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int inde
     return constraint;
 }
 
-void DistanceConstraint::preCompute() {
-    coefficients.resize(cardinality, cardinality);
-
-    float denominator = 0.0f;
-    for (int i = 0; i < cardinality; i++) {
-        denominator += mesh->inverseMasses[indices[i]];
-    }
-
-    for (int i = 0; i < cardinality; i++) {
-        float wi = mesh->inverseMasses[indices[i]];
-        coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
-    }
-}
-
 void FixedConstraint::project(int solverIterations) {
     mesh->estimatePositions[indices[0]] = target;
 }
 
+void DistanceConstraint::preCompute() {
+    coefficients.resize(cardinality, cardinality);
+    coefficients.setZero();
+
+    float w1 = mesh->inverseMasses[indices[0]];
+    float w2 = mesh->inverseMasses[indices[1]];
+    coefficients.coeffRef(0, 0) = 1.0f / (w1 / (w1 + w2));
+    coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
+}
+
 void DistanceConstraint::project(int solverIterations) {
-    MatrixXf RHS(cardinality, 3);
+    MatrixXf RHS = MatrixXf::Zero(cardinality, 3);
 
     Vector3f p1 = mesh->estimatePositions[indices[0]];
     Vector3f p2 = mesh->estimatePositions[indices[1]];
@@ -85,6 +81,7 @@ void DistanceConstraint::project(int solverIterations) {
 
 void BendConstraint::preCompute() {
     coefficients.resize(cardinality, cardinality);
+    coefficients.setZero();
 
     float denominator = 0.0f;
     for (int i = 0; i < cardinality; i++) {
@@ -98,7 +95,7 @@ void BendConstraint::preCompute() {
 }
 
 void BendConstraint::project(int solverIterations) {
-    MatrixXf RHS(cardinality, 3);
+    MatrixXf RHS = MatrixXf::Zero(cardinality, 3);
 
     Vector3f p1 = mesh->estimatePositions[indices[0]];
     Vector3f p2 = mesh->estimatePositions[indices[1]];

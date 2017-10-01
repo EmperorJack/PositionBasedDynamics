@@ -48,6 +48,7 @@ void Mesh::generateSurfaceNormals() {
 void Mesh::reset() {
     vertices = initialVertices;
 
+    estimatePositions.clear();
     velocities.clear();
 
     Vector3f initialVelocity(1.0f, 0.0f, -1.0f);

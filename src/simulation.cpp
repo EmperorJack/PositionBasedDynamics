@@ -49,9 +49,9 @@ Simulation::Simulation() {
     }
     buildEdgeConstraints(flagHigh, 0.999f);
 
-//    plane->constraints.push_back(buildBendConstraint(plane, 2, 1, 0, 3, 1.0f, (float) M_PI_2));
-    plane->constraints.push_back(buildFixedConstraint(plane, 1, plane->initialVertices[1]));
-    buildEdgeConstraints(plane, 1.0f);
+    //plane->constraints.push_back(buildBendConstraint(plane, 2, 1, 0, 3, 1.0f, (float) M_PI_2));
+    //plane->constraints.push_back(buildFixedConstraint(plane, 1, plane->initialVertices[1]));
+    //buildEdgeConstraints(plane, 1.0f);
 }
 
 Simulation::~Simulation() {
@@ -75,7 +75,7 @@ void Simulation::update() {
     simulate(testCube);
     simulate(flag);
     simulate(flagHigh);
-    simulate(plane);
+    //simulate(plane);
 }
 
 void Simulation::simulate(Mesh* mesh) {
