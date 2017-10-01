@@ -39,12 +39,8 @@ private:
     Camera* camera;
 
     // Objects
-    Mesh* testCube;
-    Mesh* plane;
-    Mesh* flagPole;
-    Mesh* flag;
-    Mesh* flagPole2;
-    Mesh* flagHigh;
+    vector<Mesh*> staticObjects;
+    vector<Mesh*> simulatedObjects;
 
 };
 

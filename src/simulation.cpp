@@ -17,21 +17,21 @@ Simulation::Simulation() {
 
     // Setup objects
     Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-    testCube = new Mesh("../resources/models/cube.obj", meshColour);
+    Mesh* testCube = new Mesh("../resources/models/cube.obj", meshColour);
     testCube->gravityAffected = true;
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
-    plane = new Mesh("../resources/models/plane.obj", planeColour);
+    Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
 
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
-    flagPole = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
-    flagPole2 = new Mesh("../resources/models/flagPole2.obj", flagPoleColour);
+    Mesh* flagPole = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
+    Mesh* flagPole2 = new Mesh("../resources/models/flagPole2.obj", flagPoleColour);
 
     Vector3f flagColour = { 0.6f, 0.0f, 0.0f };
-    flag = new Mesh("../resources/models/flag.obj", flagColour);
+    Mesh* flag = new Mesh("../resources/models/flag.obj", flagColour);
     flag->gravityAffected = true;
     flag->windAffected = true;
-    flagHigh = new Mesh("../resources/models/flagHigh.obj", flagColour);
+    Mesh* flagHigh = new Mesh("../resources/models/flagHigh.obj", flagColour);
     flagHigh->gravityAffected = true;
     flagHigh->windAffected = true;
 
@@ -50,28 +50,39 @@ Simulation::Simulation() {
     }
     buildEdgeConstraints(flagHigh, 0.95f);
     buildBendConstraints(flagHigh, 0.5f);
+
+    // Build object lists
+    staticObjects.push_back(plane);
+    staticObjects.push_back(flagPole);
+    staticObjects.push_back(flagPole2);
+
+    simulatedObjects.push_back(testCube);
+    simulatedObjects.push_back(flag);
+    simulatedObjects.push_back(flagHigh);
 }
 
 Simulation::~Simulation() {
     delete camera;
-    delete testCube;
-    delete plane;
-    delete flagPole;
-    delete flag;
-    delete flagPole2;
-    delete flagHigh;
+
+    for (Mesh* mesh : staticObjects) {
+        delete mesh;
+    }
+
+    for (Mesh* mesh : simulatedObjects) {
+        delete mesh;
+    }
 }
 
 void Simulation::reset() {
-    testCube->reset();
-    flag->reset();
-    flagHigh->reset();
+    for (Mesh* mesh : simulatedObjects) {
+        mesh->reset();
+    }
 }
 
 void Simulation::update() {
-    simulate(testCube);
-    simulate(flag);
-    simulate(flagHigh);
+    for (Mesh* mesh : simulatedObjects) {
+        simulate(mesh);
+    }
 }
 
 void Simulation::simulate(Mesh* mesh) {
@@ -131,12 +142,13 @@ void Simulation::render() {
     if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    testCube->render(camera, modelMatrix);
-    plane->render(camera, modelMatrix);
-    flagPole->render(camera, modelMatrix);
-    flag->render(camera, modelMatrix);
-    flagPole2->render(camera, modelMatrix);
-    flagHigh->render(camera, modelMatrix);
+    for (Mesh* mesh : staticObjects) {
+        mesh->render(camera, modelMatrix);
+    }
+
+    for (Mesh* mesh : simulatedObjects) {
+        mesh->render(camera, modelMatrix);
+    }
 }
 
 void Simulation::renderGUI() {
