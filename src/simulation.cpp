@@ -37,7 +37,7 @@ Simulation::Simulation() {
     flagHigh->windAffected = true;
 
     // Setup constraints
-//    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
+    //testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
     buildEdgeConstraints(testCube);
 
     for (int i = 0; i < 7; i++) {
@@ -61,7 +61,7 @@ Simulation::Simulation() {
     simulatedObjects.push_back(flag);
     simulatedObjects.push_back(flagHigh);
 
-    //omp_set_num_threads(8);
+    //omp_set_num_threads(4);
 
     reset();
 }
@@ -83,7 +83,8 @@ void Simulation::reset() {
         mesh->reset();
     }
 
-    simulatedObjects[0]->applyImpulse(Vector3f(2.0f, 2.0f, -1.0f));
+    simulatedObjects[0]->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
+    simulatedObjects[0]->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
 }
 void Simulation::update() {
     //#pragma omp parallel for
@@ -118,7 +119,7 @@ void Simulation::simulate(Mesh* mesh) {
     }
 
     // Generate collision constraints
-    vector<Constraint*> collisionConstraints;
+    vector<CollisionConstraint*> collisionConstraints;
     for (int i = 0; i < mesh->numVertices; i++) {
         generateCollisionConstraints(mesh, i, collisionConstraints);
     }
@@ -139,7 +140,7 @@ void Simulation::simulate(Mesh* mesh) {
             constraint->project(params);
         }
 
-        for (Constraint* constraint : collisionConstraints) {
+        for (CollisionConstraint* constraint : collisionConstraints) {
             constraint->project(params);
         }
     }
@@ -151,15 +152,18 @@ void Simulation::simulate(Mesh* mesh) {
     }
 
     // Update velocities of colliding vertices
-    // TODO
+    for (CollisionConstraint* constraint : collisionConstraints) {
+        updateCollisionVelocities(constraint);
+    }
 }
 
-void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Constraint*> &constraints) {
+void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<CollisionConstraint*> &constraints) {
 
     Vector3f position = Vector3f(0.0f, -3.0f, 0.0f);
     Vector3f normal = Vector3f(0.0f, 1.0f, 0.0f);
     Vector3f origin = mesh->vertices[index];
     Vector3f direction = mesh->vertices[index] - mesh->estimatePositions[index];
+    direction.normalize();
 
     float num = (position - origin).dot(normal);
     float denom = normal.dot(direction);
@@ -169,10 +173,23 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Cons
 
     float t = num / denom;
 
-    if (t >= EPSILON) {
+    if (1 / timeStep * COLLISION_THRESHOLD >= t && t >= 0.0f) {
         Vector3f intersectionPoint = origin + t * direction;
         constraints.push_back(buildCollisionConstraint(mesh, index, intersectionPoint, normal));
     }
+}
+
+void Simulation::updateCollisionVelocities(CollisionConstraint* constraint) {
+    Mesh* mesh = constraint->mesh;
+    int index = constraint->indices[0];
+    Vector3f updatedVelocity = mesh->velocities[index];
+
+    // Reflect the velocity vector around the collision normal
+    updatedVelocity = updatedVelocity - 2 * updatedVelocity.dot(constraint->normal) * constraint->normal;
+
+    mesh->velocities[index] = updatedVelocity;
+
+    // TODO Friction / restitution
 }
 
 void Simulation::render() {

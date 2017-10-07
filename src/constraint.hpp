@@ -43,7 +43,6 @@ public:
             Constraint(mesh, cardinality), target(target) {}
     void project(Params params);
 
-private:
     Vector3f target;
 
 };
@@ -56,7 +55,6 @@ public:
     void preCompute();
     void project(Params params);
 
-private:
     float distance;
 
 };
@@ -68,7 +66,6 @@ public:
             Constraint(mesh, cardinality), angle(angle) {}
     void project(Params params);
 
-private:
     float angle;
 
 };
@@ -80,7 +77,6 @@ public:
             Constraint(mesh, cardinality), position(position), normal(normal) {}
     void project(Params params);
 
-private:
     Vector3f position;
     Vector3f normal;
 

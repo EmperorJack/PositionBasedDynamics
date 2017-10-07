@@ -11,6 +11,8 @@
 
 class Simulation {
 
+    float COLLISION_THRESHOLD = 0.1f;
+
 public:
     Simulation();
     ~Simulation();
@@ -37,7 +39,8 @@ public:
 private:
 
     void simulate(Mesh* mesh);
-    void generateCollisionConstraints(Mesh* mesh, int index, vector<Constraint*> &constraints);
+    void generateCollisionConstraints(Mesh* mesh, int index, vector<CollisionConstraint*> &constraints);
+    void updateCollisionVelocities(CollisionConstraint* constraint);
 
     // Camera
     Camera* camera;
