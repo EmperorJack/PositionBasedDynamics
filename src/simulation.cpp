@@ -81,7 +81,6 @@ void Simulation::reset() {
         mesh->reset();
     }
 }
-
 void Simulation::update() {
     //#pragma omp parallel for
     //for (int i = 0; i < simulatedObjects.size(); i++) {
@@ -90,6 +89,8 @@ void Simulation::update() {
     for (Mesh* mesh : simulatedObjects) {
         simulate(mesh);
     }
+
+    windOscillation += 0.05f;
 }
 
 void Simulation::simulate(Mesh* mesh) {
@@ -97,7 +98,7 @@ void Simulation::simulate(Mesh* mesh) {
     // Apply external forces
     for (int i = 0; i < mesh->numVertices; i++) {
         if (mesh->gravityAffected) mesh->velocities[i] += timeStep * Vector3f(0, -gravity, 0);
-        if (mesh->windAffected) mesh->velocities[i] += timeStep * Vector3f(0, 0, -windSpeed);
+        if (mesh->windAffected) mesh->velocities[i] += timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f));
     }
 
     // Dampen velocities

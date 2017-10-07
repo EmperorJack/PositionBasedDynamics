@@ -46,6 +46,9 @@ private:
     vector<Mesh*> staticObjects;
     vector<Mesh*> simulatedObjects;
 
+    // Forces
+    float windOscillation = 0.0f;
+
 };
 
 #endif //POSITIONBASEDDYNAMICS_SIMULATION_HPP
