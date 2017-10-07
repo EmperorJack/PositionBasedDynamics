@@ -22,13 +22,13 @@ public:
     void renderGUI();
 
     // Variables
-    int solverIterations = 10;
-    float timeStep = 0.05f;
+    int solverIterations = 6;
+    float timeStep = 0.08f;
     float gravity = 0.981f;
-    float windSpeed = 1.0f;
+    float windSpeed = 2.5f;
     float velocityDamping = 1.0f;
-    float stretchFactor = 1.0f;
-    float bendFactor = 1.0f;
+    float stretchFactor = 0.999f;
+    float bendFactor = 0.3f;
     bool wireframe = false;
 
     // Camera variables

@@ -62,6 +62,8 @@ Simulation::Simulation() {
     simulatedObjects.push_back(flagHigh);
 
     //omp_set_num_threads(8);
+
+    reset();
 }
 
 Simulation::~Simulation() {
@@ -80,6 +82,8 @@ void Simulation::reset() {
     for (Mesh* mesh : simulatedObjects) {
         mesh->reset();
     }
+
+    simulatedObjects[0]->applyImpulse(Vector3f(2.0f, 2.0f, -1.0f));
 }
 void Simulation::update() {
     //#pragma omp parallel for
@@ -96,10 +100,8 @@ void Simulation::update() {
 void Simulation::simulate(Mesh* mesh) {
 
     // Apply external forces
-    for (int i = 0; i < mesh->numVertices; i++) {
-        if (mesh->gravityAffected) mesh->velocities[i] += timeStep * Vector3f(0, -gravity, 0);
-        if (mesh->windAffected) mesh->velocities[i] += timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f));
-    }
+    if (mesh->gravityAffected) mesh->applyImpulse(timeStep * Vector3f(0, -gravity, 0));
+    if (mesh->windAffected) mesh->applyImpulse(timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f)));
 
     // Dampen velocities
     for (int i = 0; i < mesh->numVertices; i++) {
@@ -121,8 +123,6 @@ void Simulation::simulate(Mesh* mesh) {
         generateCollisionConstraints(mesh, i, collisionConstraints);
     }
 
-//    cout << collisionConstraints.size();
-
     // Setup params
     Params params;
     params.solverIterations = solverIterations;
@@ -143,8 +143,6 @@ void Simulation::simulate(Mesh* mesh) {
             constraint->project(params);
         }
     }
-
-//    cout << endl;
 
     // Update positions and velocities
     for (int i = 0; i < mesh->numVertices; i++) {
@@ -222,10 +220,10 @@ void Simulation::renderGUI() {
     ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");
 
     ImGui::Text("Stretch Factor");
-    ImGui::SliderFloat("##stretchFactor", &stretchFactor, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("##stretchFactor", &stretchFactor, 0.0f, 1.0f, "%.3f");
 
     ImGui::Text("Bend Factor");
-    ImGui::SliderFloat("##bendFactor", &bendFactor, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("##bendFactor", &bendFactor, 0.0f, 1.0f, "%.3f");
 
     ImGui::Text("Wireframe");
     ImGui::Checkbox("##wireframe", &wireframe);

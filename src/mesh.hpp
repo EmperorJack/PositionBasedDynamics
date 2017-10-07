@@ -50,6 +50,7 @@ public:
     Mesh(string filename, Vector3f colour);
     ~Mesh();
     void reset();
+    void applyImpulse(Vector3f force);
     void render(Camera* camera, Matrix4f transform);
 
     int numVertices;

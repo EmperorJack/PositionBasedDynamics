@@ -51,8 +51,13 @@ void Mesh::reset() {
     estimatePositions.clear();
     velocities.clear();
 
-    Vector3f initialVelocity(1.0f, 0.0f, -1.0f);
-    velocities.resize((size_t) numVertices, initialVelocity);
+    velocities.resize((size_t) numVertices, Vector3f::Zero());
+}
+
+void Mesh::applyImpulse(Vector3f force) {
+    for (int i = 0; i < numVertices; i++) {
+        velocities[i] += force;
+    }
 }
 
 void Mesh::render(Camera* camera, Matrix4f transform) {
