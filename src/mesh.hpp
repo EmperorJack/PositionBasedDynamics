@@ -51,6 +51,7 @@ public:
     ~Mesh();
     void reset();
     void applyImpulse(Vector3f force);
+    bool intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal);
     void render(Camera* camera, Matrix4f transform);
 
     int numVertices;
@@ -78,6 +79,7 @@ public:
     bool windAffected = false;
 
 private:
+    bool rayTriangleIntersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, int triangleIndex, float &u, float &v);
     void parseObjFile(string filename);
     void generateSurfaceNormals();
 

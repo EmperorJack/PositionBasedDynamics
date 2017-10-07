@@ -159,24 +159,47 @@ void Simulation::simulate(Mesh* mesh) {
 
 void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<CollisionConstraint*> &constraints) {
 
-    Vector3f position = Vector3f(0.0f, -3.0f, 0.0f);
-    Vector3f normal = Vector3f(0.0f, 1.0f, 0.0f);
-    Vector3f origin = mesh->vertices[index];
-    Vector3f direction = mesh->vertices[index] - mesh->estimatePositions[index];
-    direction.normalize();
+    // Setup ray
+    Vector3f rayOrigin = mesh->vertices[index];
+    Vector3f rayDirection = mesh->vertices[index] - mesh->estimatePositions[index];
+    rayDirection.normalize();
 
-    float num = (position - origin).dot(normal);
-    float denom = normal.dot(direction);
+    // Setup intersection variables
+    float t;
+    Vector3f normal;
 
-    // Ray is parallel with plane
-    if (fabs(denom) < 0.000001f) return;
+    // Check for self intersection
+    if (!mesh->isRigidBody) {
+        bool meshCollision = false;//mesh->intersect(rayOrigin, rayDirection, t, normal);
+        if (meshCollision && 1 / timeStep * COLLISION_THRESHOLD >= t) {
+            Vector3f intersectionPoint = rayOrigin + t * rayDirection;
+            constraints.push_back(buildCollisionConstraint(mesh, index, intersectionPoint, normal));
+        }
+    }
 
-    float t = num / denom;
-
-    if (1 / timeStep * COLLISION_THRESHOLD >= t && t >= 0.0f) {
-        Vector3f intersectionPoint = origin + t * direction;
+    // Check for plane collision
+    bool planeCollision = planeIntersection(rayOrigin, rayDirection, t, normal);
+    if (planeCollision && 1 / timeStep * COLLISION_THRESHOLD >= t) {
+        Vector3f intersectionPoint = rayOrigin + t * rayDirection;
         constraints.push_back(buildCollisionConstraint(mesh, index, intersectionPoint, normal));
     }
+}
+
+bool Simulation::planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal) {
+
+    // Hardcoded plane position for now
+    Vector3f position = Vector3f(0.0f, -3.0f, 0.0f);
+    normal = Vector3f(0.0f, 1.0f, 0.0f);
+
+    float num = (position - rayOrigin).dot(normal);
+    float denom = normal.dot(rayDirection);
+
+    // Ray is parallel with plane
+    if (fabs(denom) < 0.000001f) return false;
+
+    t = num / denom;
+
+    return t >= 0.0f;
 }
 
 void Simulation::updateCollisionVelocities(CollisionConstraint* constraint) {

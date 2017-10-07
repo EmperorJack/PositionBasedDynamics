@@ -40,6 +40,7 @@ private:
 
     void simulate(Mesh* mesh);
     void generateCollisionConstraints(Mesh* mesh, int index, vector<CollisionConstraint*> &constraints);
+    bool planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal);
     void updateCollisionVelocities(CollisionConstraint* constraint);
 
     // Camera

@@ -11,9 +11,6 @@
 Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
     parseObjFile(filename);
 
-    this->numVertices = (int) vertices.size();
-    this->numFaces = (int) triangles.size();
-
     initialVertices = vertices;
 
     // Setup VBO
@@ -36,7 +33,7 @@ Mesh::~Mesh() {
 
 void Mesh::generateSurfaceNormals() {
     surfaceNormals.clear();
-    for (int i = 0; i < triangles.size(); i++) {
+    for (int i = 0; i < numFaces; i++) {
         Vector3f v1 = vertices[triangles[i].v[1].p] - vertices[triangles[i].v[0].p];
         Vector3f v2 = vertices[triangles[i].v[2].p] - vertices[triangles[i].v[0].p];
         Vector3f surfaceNormal = v1.cross(v2);
@@ -60,6 +57,74 @@ void Mesh::applyImpulse(Vector3f force) {
     }
 }
 
+bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal) {
+
+    // Ensure the ray intersects the bounding box before testing each triangle
+    //if (!boundingBox->intersect(ray)) return false;
+
+    bool hit = false;
+    t = INFINITY;
+    int closestIndex = 0;
+    Vector2f uv;
+
+    for (int triangleIndex = 0; triangleIndex < numFaces; triangleIndex++) {
+        float tTri = INFINITY;
+        float u, v;
+        if (rayTriangleIntersect(rayOrigin, rayDirection, tTri, triangleIndex, u, v) && tTri < t) {
+            hit = true;
+            t = tTri;
+            closestIndex = triangleIndex;
+            uv[0] = u;
+            uv[1] = v;
+        }
+    }
+
+    if (hit) {
+        // Compute a smooth interpolated normal
+//        Vector3f n0 = normals[triangles[closestIndex].v[0].n];
+//        Vector3f n1 = normals[triangles[closestIndex].v[1].n];
+//        Vector3f n2 = normals[triangles[closestIndex].v[2].n];
+//        normal = (((1.0f - uv[0] - uv[1]) * n0) + (uv[0] * n1) + (uv[1] * n2));
+        Vector3f v1 = vertices[triangles[closestIndex].v[1].p] - vertices[triangles[closestIndex].v[0].p];
+        Vector3f v2 = vertices[triangles[closestIndex].v[2].p] - vertices[triangles[closestIndex].v[0].p];
+        normal = v1.cross(v2);
+        normal.normalize();
+    }
+
+    return hit;
+}
+
+bool Mesh::rayTriangleIntersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, int triangleIndex, float &u, float &v) {
+
+    // Get the triangle properties
+    Vector3f v0 = vertices[triangles[triangleIndex].v[0].p];
+    Vector3f v1 = vertices[triangles[triangleIndex].v[1].p];
+    Vector3f v2 = vertices[triangles[triangleIndex].v[2].p];
+    Vector3f n = surfaceNormals[triangleIndex];
+
+    Vector3f v0v1 = v1 - v0;
+    Vector3f v0v2 = v2 - v0;
+    Vector3f pvec = rayDirection.cross(v0v2);
+    float det = v0v1.dot(pvec);
+
+    // Check if ray and triangle are parallel
+    if (fabs(det) < 0.0001f) return false;
+
+    float invDet = 1.0f / det;
+
+    Vector3f tvec = rayOrigin - v0;
+    u = tvec.dot(pvec) * invDet;
+    if (u < 0 || u > 1) return false;
+
+    Vector3f qvec = tvec.cross(v0v1);
+    v = rayDirection.dot(qvec) * invDet;
+    if (v < 0 || u + v > 1) return false;
+
+    t = v0v2.dot(qvec) * invDet;
+
+    return t > 0;
+}
+
 void Mesh::render(Camera* camera, Matrix4f transform) {
 
     // Setup transform
@@ -70,7 +135,7 @@ void Mesh::render(Camera* camera, Matrix4f transform) {
     vector<Vector3f> tempNormals;
     tempNormals.resize((size_t) numVertices, Vector3f::Zero());
     generateSurfaceNormals();
-    for (unsigned int i = 0; i < triangles.size(); i++) {
+    for (unsigned int i = 0; i < numFaces; i++) {
         Triangle tri = triangles[i];
 
         for (int j = 0; j < 3; j++) {
@@ -81,7 +146,7 @@ void Mesh::render(Camera* camera, Matrix4f transform) {
     // Build vertex positions and normals
     vector<Vector3f> outVertices;
     vector<Vector3f> outNormals;
-    for (unsigned int i = 0; i < triangles.size(); i++) {
+    for (unsigned int i = 0; i < numFaces; i++) {
         Triangle tri = triangles[i];
 
         for (int j = 0; j < 3; j++) {
@@ -221,6 +286,9 @@ void Mesh::parseObjFile(string filename) {
             }
         }
     }
+
+    this->numVertices = (int) vertices.size();
+    this->numFaces = (int) triangles.size();
 
     generateSurfaceNormals();
 }
