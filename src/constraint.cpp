@@ -69,7 +69,6 @@ BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int inde
     constraint->indices.push_back(indexC);
     constraint->indices.push_back(indexD);
 
-    constraint->preCompute();
     return constraint;
 }
 
@@ -116,21 +115,6 @@ void DistanceConstraint::project(Params params) {
     }
 }
 
-void BendConstraint::preCompute() {
-//    coefficients.resize(cardinality, cardinality);
-//    coefficients.setZero();
-//
-//    float denominator = 0.0f;
-//    for (int i = 0; i < cardinality; i++) {
-//        denominator += mesh->inverseMasses[indices[i]];
-//    }
-//
-//    for (int i = 0; i < cardinality; i++) {
-//        float wi = mesh->inverseMasses[indices[i]];
-//        coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
-//    }
-}
-
 void BendConstraint::project(Params params) {
     MatrixXf RHS = MatrixXf::Zero(cardinality, 3);
 
@@ -139,14 +123,17 @@ void BendConstraint::project(Params params) {
     Vector3f p3 = mesh->estimatePositions[indices[2]];
     Vector3f p4 = mesh->estimatePositions[indices[3]];
 
-    // Compute normals
-    Vector3f n1 = p2.cross(p3) / p2.cross(p3).norm();
-    Vector3f n2 = p2.cross(p4) / p2.cross(p4).norm();
-    float d = n1.dot(n2); // n1.transpose() * n2
+    Vector3f p2Xp3 = p2.cross(p3);
+    Vector3f p2Xp4 = p2.cross(p4);
 
-    Vector3f q3 = (p2.cross(n2) + d * n1.cross(p2)) / (p2.cross(p3).norm());
-    Vector3f q4 = (p2.cross(n1) + d * n2.cross(p2)) / (p2.cross(p4).norm());
-    Vector3f q2 = -(p3.cross(n2) + d * n1.cross(p3)) / (p2.cross(p3).norm()) - (p4.cross(n1) + d * n2.cross(p4)) / (p2.cross(p4).norm());
+    // Compute normals
+    Vector3f n1 = p2Xp3 / p2Xp3.norm();
+    Vector3f n2 = p2Xp4 / p2Xp4.norm();
+    float d = n1.transpose() * n2;
+
+    Vector3f q3 = (p2.cross(n2) + d * n1.cross(p2)) / (p2Xp3.norm());
+    Vector3f q4 = (p2.cross(n1) + d * n2.cross(p2)) / (p2Xp4.norm());
+    Vector3f q2 = -(p3.cross(n2) + d * n1.cross(p3)) / (p2Xp3.norm()) - (p4.cross(n1) + d * n2.cross(p4)) / (p2Xp4.norm());
     Vector3f q1 = -q2 - q3 - q4;
 
     // Compute coefficient matrix

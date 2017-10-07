@@ -66,7 +66,6 @@ class BendConstraint : public Constraint {
 public:
     BendConstraint(Mesh* mesh, int cardinality, float angle) :
             Constraint(mesh, cardinality), angle(angle) {}
-    void preCompute();
     void project(Params params);
 
 private:
