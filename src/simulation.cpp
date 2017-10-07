@@ -37,7 +37,7 @@ Simulation::Simulation() {
     flagHigh->windAffected = true;
 
     // Setup constraints
-    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
+//    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
     buildEdgeConstraints(testCube);
 
     for (int i = 0; i < 7; i++) {
@@ -115,7 +115,12 @@ void Simulation::simulate(Mesh* mesh) {
     }
 
     // Generate collision constraints
-    // TODO
+    vector<Constraint*> collisionConstraints;
+    for (int i = 0; i < mesh->numVertices; i++) {
+        generateCollisionConstraints(mesh, i, collisionConstraints);
+    }
+
+//    cout << collisionConstraints.size();
 
     // Setup params
     Params params;
@@ -132,7 +137,13 @@ void Simulation::simulate(Mesh* mesh) {
         for (Constraint* constraint : mesh->constraints) {
             constraint->project(params);
         }
+
+        for (Constraint* constraint : collisionConstraints) {
+            constraint->project(params);
+        }
     }
+
+//    cout << endl;
 
     // Update positions and velocities
     for (int i = 0; i < mesh->numVertices; i++) {
@@ -142,6 +153,27 @@ void Simulation::simulate(Mesh* mesh) {
 
     // Update velocities of colliding vertices
     // TODO
+}
+
+void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Constraint*> &constraints) {
+
+    Vector3f position = Vector3f(0.0f, -3.0f, 0.0f);
+    Vector3f normal = Vector3f(0.0f, 1.0f, 0.0f);
+    Vector3f origin = mesh->vertices[index];
+    Vector3f direction = mesh->vertices[index] - mesh->estimatePositions[index];
+
+    float num = (position - origin).dot(normal);
+    float denom = normal.dot(direction);
+
+    // Ray is parallel with plane
+    if (fabs(denom) < 0.000001f) return;
+
+    float t = num / denom;
+
+    if (t >= EPSILON) {
+        Vector3f intersectionPoint = origin + t * direction;
+        constraints.push_back(buildCollisionConstraint(mesh, index, intersectionPoint, normal));
+    }
 }
 
 void Simulation::render() {

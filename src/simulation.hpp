@@ -18,7 +18,6 @@ public:
     void reset();
 
     void update();
-    void simulate(Mesh* mesh);
     void render();
     void renderGUI();
 
@@ -36,6 +35,9 @@ public:
     float pitch, yaw, roll;
 
 private:
+
+    void simulate(Mesh* mesh);
+    void generateCollisionConstraints(Mesh* mesh, int index, vector<Constraint*> &constraints);
 
     // Camera
     Camera* camera;

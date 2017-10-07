@@ -74,11 +74,25 @@ private:
 
 };
 
+class CollisionConstraint : public Constraint {
+
+public:
+    CollisionConstraint(Mesh* mesh, int cardinality, Vector3f position, Vector3f normal) :
+            Constraint(mesh, cardinality), position(position), normal(normal) {}
+    void project(Params params);
+
+private:
+    Vector3f position;
+    Vector3f normal;
+
+};
+
 // Constraint building
 void buildEdgeConstraints(Mesh* mesh);
 void buildBendConstraints(Mesh* mesh);
 FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
 DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance);
 BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);
+CollisionConstraint* buildCollisionConstraint(Mesh* mesh, int index, Vector3f position, Vector3f normal);
 
 #endif //POSITIONBASEDDYNAMICS_CONSTRAINT_HPP

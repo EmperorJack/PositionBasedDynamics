@@ -73,6 +73,12 @@ BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int inde
     return constraint;
 }
 
+CollisionConstraint* buildCollisionConstraint(Mesh* mesh, int index, Vector3f position, Vector3f normal) {
+    CollisionConstraint* constraint = new CollisionConstraint(mesh, 1, position, normal);
+    constraint->indices.push_back(index);
+    return constraint;
+}
+
 void FixedConstraint::project(Params params) {
     mesh->estimatePositions[indices[0]] = target;
 }
@@ -178,4 +184,18 @@ void BendConstraint::project(Params params) {
         if (!mesh->isRigidBody) k -= pow(1.0f - params.bendFactor, 1.0f / params.solverIterations);
         mesh->estimatePositions[vertexIndex] += k * displacement;
     }
+}
+
+void CollisionConstraint::project(Params params) {
+    Vector3f p = mesh->estimatePositions[indices[0]];
+
+    // Check if constraint is already satisfied
+    if ((p - position).dot(normal) >= 0.0f) return;
+
+    float a = (p - position).dot(normal);
+    Vector3f b = (p - position) / ((p - position).norm());
+
+    Vector3f displacement = a * b;
+
+    mesh->estimatePositions[indices[0]] += displacement;
 }
