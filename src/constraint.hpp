@@ -73,12 +73,32 @@ public:
 class CollisionConstraint : public Constraint {
 
 public:
-    CollisionConstraint(Mesh* mesh, int cardinality, Vector3f position, Vector3f normal) :
-            Constraint(mesh, cardinality), position(position), normal(normal) {}
+    CollisionConstraint(Mesh* mesh, int cardinality, Vector3f normal) :
+            Constraint(mesh, cardinality), normal(normal) {}
+    virtual void project(Params params) {}
+
+    Vector3f normal;
+
+};
+
+class StaticCollisionConstraint : public CollisionConstraint {
+
+public:
+    StaticCollisionConstraint(Mesh* mesh, int cardinality, Vector3f normal, Vector3f position) :
+        CollisionConstraint(mesh, cardinality, normal), position(position) {}
     void project(Params params);
 
     Vector3f position;
-    Vector3f normal;
+};
+
+class TriangleCollisionConstraint : public CollisionConstraint {
+
+public:
+    TriangleCollisionConstraint(Mesh* mesh, int cardinality, Vector3f normal, int triangleIndex) :
+        CollisionConstraint(mesh, cardinality, normal), triangleIndex(triangleIndex) {}
+    void project(Params params);
+
+    int triangleIndex;
 
 };
 
@@ -88,6 +108,7 @@ void buildBendConstraints(Mesh* mesh);
 FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
 DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance);
 BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);
-CollisionConstraint* buildCollisionConstraint(Mesh* mesh, int index, Vector3f position, Vector3f normal);
+StaticCollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position);
+TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh* mesh, int vertexIndex, int triangleIndex, Vector3f normal);
 
 #endif //POSITIONBASEDDYNAMICS_CONSTRAINT_HPP

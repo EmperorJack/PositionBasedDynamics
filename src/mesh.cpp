@@ -57,7 +57,7 @@ void Mesh::applyImpulse(Vector3f force) {
     }
 }
 
-bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal) {
+bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal, int vertexIndex, int &triHitIndex) {
 
     // Ensure the ray intersects the bounding box before testing each triangle
     //if (!boundingBox->intersect(ray)) return false;
@@ -70,7 +70,7 @@ bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector
     for (int triangleIndex = 0; triangleIndex < numFaces; triangleIndex++) {
         float tTri = INFINITY;
         float u, v;
-        if (rayTriangleIntersect(rayOrigin, rayDirection, tTri, triangleIndex, u, v) && tTri < t) {
+        if (rayTriangleIntersect(rayOrigin, rayDirection, tTri, triangleIndex, vertexIndex, u, v) && tTri < t) {
             hit = true;
             t = tTri;
             closestIndex = triangleIndex;
@@ -80,6 +80,8 @@ bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector
     }
 
     if (hit) {
+        triHitIndex = closestIndex;
+
         // Compute a smooth interpolated normal
 //        Vector3f n0 = normals[triangles[closestIndex].v[0].n];
 //        Vector3f n1 = normals[triangles[closestIndex].v[1].n];
@@ -94,13 +96,17 @@ bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector
     return hit;
 }
 
-bool Mesh::rayTriangleIntersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, int triangleIndex, float &u, float &v) {
+bool Mesh::rayTriangleIntersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, int triangleIndex, int vertexIndex, float &u, float &v) {
+    int i0 = triangles[triangleIndex].v[0].p;
+    int i1 = triangles[triangleIndex].v[1].p;
+    int i2 = triangles[triangleIndex].v[2].p;
+
+    if (i0 == vertexIndex || i1 == vertexIndex || i2 == vertexIndex) return false;
 
     // Get the triangle properties
-    Vector3f v0 = vertices[triangles[triangleIndex].v[0].p];
-    Vector3f v1 = vertices[triangles[triangleIndex].v[1].p];
-    Vector3f v2 = vertices[triangles[triangleIndex].v[2].p];
-    Vector3f n = surfaceNormals[triangleIndex];
+    Vector3f v0 = vertices[i0];
+    Vector3f v1 = vertices[i1];
+    Vector3f v2 = vertices[i2];
 
     Vector3f v0v1 = v1 - v0;
     Vector3f v0v2 = v2 - v0;
@@ -122,7 +128,7 @@ bool Mesh::rayTriangleIntersect(Vector3f rayOrigin, Vector3f rayDirection, float
 
     t = v0v2.dot(qvec) * invDet;
 
-    return t > 0;
+    return true;//#t >= 0.0f;
 }
 
 void Mesh::render(Camera* camera, Matrix4f transform) {

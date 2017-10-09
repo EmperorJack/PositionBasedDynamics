@@ -72,9 +72,15 @@ BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int inde
     return constraint;
 }
 
-CollisionConstraint* buildCollisionConstraint(Mesh* mesh, int index, Vector3f position, Vector3f normal) {
-    CollisionConstraint* constraint = new CollisionConstraint(mesh, 1, position, normal);
+StaticCollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position) {
+    StaticCollisionConstraint* constraint = new StaticCollisionConstraint(mesh, 1, normal, position);
     constraint->indices.push_back(index);
+    return constraint;
+}
+
+TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh* mesh, int vertexIndex, int triangleIndex, Vector3f normal) {
+    TriangleCollisionConstraint* constraint = new TriangleCollisionConstraint(mesh, 1, normal, triangleIndex);
+    constraint->indices.push_back(vertexIndex);
     return constraint;
 }
 
@@ -173,16 +179,34 @@ void BendConstraint::project(Params params) {
     }
 }
 
-void CollisionConstraint::project(Params params) {
+void StaticCollisionConstraint::project(Params params) {
     Vector3f p = mesh->estimatePositions[indices[0]];
 
     // Check if constraint is already satisfied
     if ((p - position).dot(normal) >= 0.0f) return;
-
+    
     float a = (p - position).dot(normal);
     Vector3f b = (p - position) / ((p - position).norm());
 
     Vector3f displacement = a * b;
 
     mesh->estimatePositions[indices[0]] += displacement;
+}
+
+void TriangleCollisionConstraint::project(Params params) {
+//    Vector3f q = mesh->estimatePositions[indices[0]];
+//
+//    Triangle tri = mesh->triangles[triangleIndex];
+//
+//    // Check if constraint is already satisfied
+//    if ((p - position).dot(normal) >= 0.0f) return;
+//
+//    cout << "solving for constraint" << endl;
+//
+//    float a = (p - position).dot(normal);
+//    Vector3f b = (p - position) / ((p - position).norm());
+//
+//    Vector3f displacement = a * b;
+//
+//    mesh->estimatePositions[indices[0]] += displacement;
 }

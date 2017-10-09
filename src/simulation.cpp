@@ -55,14 +55,19 @@ Simulation::Simulation() {
     buildEdgeConstraints(flagHigh);
     buildBendConstraints(flagHigh);
 
+    simple->constraints.push_back(buildFixedConstraint(simple, 0, simple->initialVertices[0]));
+    simple->constraints.push_back(buildFixedConstraint(simple, 1, simple->initialVertices[1]));
+    simple->constraints.push_back(buildFixedConstraint(simple, 2, simple->initialVertices[2]));
+
     // Build object lists
     staticObjects.push_back(plane);
     staticObjects.push_back(flagPole);
     staticObjects.push_back(flagPole2);
+//    staticObjects.push_back(simple);
 
-    simulatedObjects.push_back(testCube);
-    simulatedObjects.push_back(flag);
-    simulatedObjects.push_back(flagHigh);
+//    simulatedObjects.push_back(testCube);
+//    simulatedObjects.push_back(flag);
+//    simulatedObjects.push_back(flagHigh);
     simulatedObjects.push_back(simple);
 
     //omp_set_num_threads(4);
@@ -87,8 +92,8 @@ void Simulation::reset() {
         mesh->reset();
     }
 
-    simulatedObjects[0]->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
-    simulatedObjects[0]->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
+    //simulatedObjects[0]->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
+    //simulatedObjects[0]->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
 }
 void Simulation::update() {
     //#pragma omp parallel for
@@ -171,13 +176,15 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
     // Setup intersection variables
     float t;
     Vector3f normal;
+    int triangleIndex;
 
     // Check for self intersection
-    if (!mesh->isRigidBody) {
-        bool meshCollision = false;//mesh->intersect(rayOrigin, rayDirection, t, normal);
-        if (meshCollision && 1 / timeStep * COLLISION_THRESHOLD >= t) {
-            Vector3f intersectionPoint = rayOrigin + t * rayDirection;
-            constraints.push_back(buildCollisionConstraint(mesh, index, intersectionPoint, normal));
+    if (!mesh->isRigidBody && index == 3) {
+        bool meshCollision = mesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
+//        if (meshCollision) cout << t << endl;
+        if (meshCollision && 0 >= t && t >= -CLOTH_THICKNESS) {
+            cout << "c" << normal << endl << endl;
+            constraints.push_back(buildTriangleCollisionConstraint(mesh, index, triangleIndex, normal));
         }
     }
 
@@ -185,7 +192,7 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
     bool planeCollision = planeIntersection(rayOrigin, rayDirection, t, normal);
     if (planeCollision && 1 / timeStep * COLLISION_THRESHOLD >= t) {
         Vector3f intersectionPoint = rayOrigin + t * rayDirection;
-        constraints.push_back(buildCollisionConstraint(mesh, index, intersectionPoint, normal));
+        constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
     }
 }
 
@@ -255,7 +262,7 @@ void Simulation::renderGUI() {
     ImGui::SliderFloat("##timeStep", &timeStep, 0.001f, 0.1f, "%.3f");
 
     ImGui::Text("Gravity");
-    ImGui::SliderFloat("##gravity", &gravity, 0.01f, 10.0f, "%.2f");
+    ImGui::SliderFloat("##gravity", &gravity, -10.01f, 10.0f, "%.2f");
 
     ImGui::Text("WindSpeed");
     ImGui::SliderFloat("##windSpeed", &windSpeed, 0.01f, 10.0f, "%.2f");
