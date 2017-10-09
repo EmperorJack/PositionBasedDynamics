@@ -183,8 +183,8 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
         bool meshCollision = mesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 //        if (meshCollision) cout << t << endl;
         if (meshCollision && 0 >= t && t >= -CLOTH_THICKNESS) {
-            cout << "c" << normal << endl << endl;
-            constraints.push_back(buildTriangleCollisionConstraint(mesh, index, triangleIndex, normal));
+//            cout << "c" << normal << endl << endl;
+            constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, triangleIndex, CLOTH_THICKNESS));
         }
     }
 

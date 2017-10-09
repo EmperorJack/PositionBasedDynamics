@@ -78,8 +78,8 @@ StaticCollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index,
     return constraint;
 }
 
-TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh* mesh, int vertexIndex, int triangleIndex, Vector3f normal) {
-    TriangleCollisionConstraint* constraint = new TriangleCollisionConstraint(mesh, 1, normal, triangleIndex);
+TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh* mesh, int vertexIndex, Vector3f normal, int triangleIndex, float height) {
+    TriangleCollisionConstraint* constraint = new TriangleCollisionConstraint(mesh, 1, normal, triangleIndex, height);
     constraint->indices.push_back(vertexIndex);
     return constraint;
 }
@@ -184,7 +184,7 @@ void StaticCollisionConstraint::project(Params params) {
 
     // Check if constraint is already satisfied
     if ((p - position).dot(normal) >= 0.0f) return;
-    
+
     float a = (p - position).dot(normal);
     Vector3f b = (p - position) / ((p - position).norm());
 
@@ -194,19 +194,25 @@ void StaticCollisionConstraint::project(Params params) {
 }
 
 void TriangleCollisionConstraint::project(Params params) {
-//    Vector3f q = mesh->estimatePositions[indices[0]];
-//
-//    Triangle tri = mesh->triangles[triangleIndex];
-//
-//    // Check if constraint is already satisfied
-//    if ((p - position).dot(normal) >= 0.0f) return;
-//
-//    cout << "solving for constraint" << endl;
-//
-//    float a = (p - position).dot(normal);
-//    Vector3f b = (p - position) / ((p - position).norm());
-//
-//    Vector3f displacement = a * b;
-//
-//    mesh->estimatePositions[indices[0]] += displacement;
+    Vector3f q = mesh->estimatePositions[indices[0]];
+
+    Triangle tri = mesh->triangles[triangleIndex];
+    Vector3f p1 = mesh->estimatePositions[tri.v[0].p];
+    Vector3f p3 = mesh->estimatePositions[tri.v[1].p];
+    Vector3f p2 = mesh->estimatePositions[tri.v[2].p];
+
+    // Check if constraint is already satisfied
+    Vector3f n = (p2 - p1).cross(p3 - p1);
+    n /= n.norm();
+
+    if ((q - p1).dot(n) - height >= 0.0f) return;
+
+    float a = (q - p1).dot(n) - height;
+    Vector3f b = n;
+
+    Vector3f displacement = a * b;
+
+//    cout << displacement << endl;
+
+    mesh->estimatePositions[indices[0]] -= displacement;
 }
