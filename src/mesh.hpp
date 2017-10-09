@@ -35,7 +35,7 @@ struct Edge {
 
 struct EdgeCompare {
     std::less<std::pair<int, int>> lessComparator;
-    bool operator() (const Edge &l, const Edge &r) {
+    bool operator() (const Edge &l, const Edge &r) const {
         return lessComparator(minmax(l.v[0].p, l.v[1].p), minmax(r.v[0].p, r.v[1].p));
     }
 };

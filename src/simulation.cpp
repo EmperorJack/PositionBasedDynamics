@@ -36,6 +36,9 @@ Simulation::Simulation() {
     flagHigh->gravityAffected = true;
     flagHigh->windAffected = true;
 
+    Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
+    simple->gravityAffected = true;
+
     // Setup constraints
     //testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
     buildEdgeConstraints(testCube);
@@ -60,6 +63,7 @@ Simulation::Simulation() {
     simulatedObjects.push_back(testCube);
     simulatedObjects.push_back(flag);
     simulatedObjects.push_back(flagHigh);
+    simulatedObjects.push_back(simple);
 
     //omp_set_num_threads(4);
 
