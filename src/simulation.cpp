@@ -23,6 +23,7 @@ Simulation::Simulation() {
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
     Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
+    plane->isRigidBody = true;
 
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
     Mesh* flagPole = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
@@ -36,11 +37,20 @@ Simulation::Simulation() {
     flagHigh->gravityAffected = true;
     flagHigh->windAffected = true;
 
+    Vector3f clothColour = { 0.0f, 0.6f, 0.0f };
+    Mesh* cloth = new Mesh("../resources/models/cloth.obj", clothColour);
+    cloth->gravityAffected = true;
+
+    Vector3f passiveCubeColour = { 0.5f, 0.5f, 0.5f };
+    Mesh* passiveCube = new Mesh("../resources/models/passiveCube.obj", planeColour);
+//    passiveCube->isRigidBody = true;
+
     Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
+//    Mesh* simple = new Mesh("../resources/models/selfIntersectionTest.obj", planeColour);
     simple->gravityAffected = true;
 
     // Setup constraints
-    //testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
+//    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
     buildEdgeConstraints(testCube);
 
     for (int i = 0; i < 7; i++) {
@@ -55,24 +65,33 @@ Simulation::Simulation() {
     buildEdgeConstraints(flagHigh);
     buildBendConstraints(flagHigh);
 
+    buildEdgeConstraints(cloth);
+    buildBendConstraints(cloth);
+
     simple->constraints.push_back(buildFixedConstraint(simple, 0, simple->initialVertices[0]));
     simple->constraints.push_back(buildFixedConstraint(simple, 1, simple->initialVertices[1]));
     simple->constraints.push_back(buildFixedConstraint(simple, 2, simple->initialVertices[2]));
+//    simple->constraints.push_back(buildFixedConstraint(simple, 3, simple->initialVertices[3]));
+//    buildEdgeConstraints(simple);
 
     // Build object lists
     staticObjects.push_back(plane);
     staticObjects.push_back(flagPole);
     staticObjects.push_back(flagPole2);
-//    staticObjects.push_back(simple);
+    staticObjects.push_back(passiveCube);
 
-//    simulatedObjects.push_back(testCube);
-    simulatedObjects.push_back(flag);
+    simulatedObjects.push_back(testCube);
+//    simulatedObjects.push_back(flag);
 //    simulatedObjects.push_back(flagHigh);
-    simulatedObjects.push_back(simple);
+//    simulatedObjects.push_back(cloth);
+//    simulatedObjects.push_back(simple);
 
     //omp_set_num_threads(4);
 
     reset();
+
+    testCube->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
+    testCube->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
 }
 
 Simulation::~Simulation() {
@@ -91,9 +110,6 @@ void Simulation::reset() {
     for (Mesh* mesh : simulatedObjects) {
         mesh->reset();
     }
-
-    //simulatedObjects[0]->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
-    //simulatedObjects[0]->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
 }
 void Simulation::update() {
     //#pragma omp parallel for
@@ -133,8 +149,6 @@ void Simulation::simulate(Mesh* mesh) {
         generateCollisionConstraints(mesh, i, collisionConstraints);
     }
 
-    cout << collisionConstraints.size() << endl;
-
     // Setup params
     Params params;
     params.solverIterations = solverIterations;
@@ -172,40 +186,58 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
 
     // Setup ray
     Vector3f rayOrigin = mesh->vertices[index];
-    Vector3f rayDirection = mesh->vertices[index] - mesh->estimatePositions[index];
+    Vector3f rayDirection = mesh->estimatePositions[index] - mesh->vertices[index];
     rayDirection.normalize();
 
     // Setup intersection variables
-    float t;
+    float t = INFINITY;
     Vector3f normal;
     int triangleIndex;
 
     // Check for self intersection
-    if (!mesh->isRigidBody) {
+    if (false) {
         bool meshCollision = mesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 
         t = fabs(t);
 
         if (meshCollision && 0 < t && t <= CLOTH_THICKNESS) {
-//        if (meshCollision && 0 >= t && t >= -CLOTH_THICKNESS) {
             Triangle triangle = mesh->triangles[triangleIndex];
 
-            if ((mesh->vertices[triangle.v[0].p] - mesh->estimatePositions[index]).dot(normal) > 0.0f) {
-//                cout << "in front" << endl;
-                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[1].p, triangle.v[2].p));
-            } else {
-//                cout << "behind" << endl;
+            if ((mesh->vertices[triangle.v[0].p] - mesh->vertices[index]).dot(normal) > 0.0f) {
                 constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[2].p, triangle.v[1].p));
+            } else {
+                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[1].p, triangle.v[2].p));
             }
         }
     }
 
-    // Check for plane collision
-    bool planeCollision = planeIntersection(rayOrigin, rayDirection, t, normal);
-    if (planeCollision && 1 / timeStep * COLLISION_THRESHOLD >= t) {
-        Vector3f intersectionPoint = rayOrigin + t * rayDirection;
-        constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
+    for (Mesh* staticMesh : staticObjects) {
+        if (!staticMesh->isRigidBody) continue;
+
+        bool meshCollision = staticMesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
+
+//        t = fabs(t);
+
+        //float thres = 1 / timeStep * COLLISION_THRESHOLD;
+
+//        float thres = COLLISION_THRESHOLD;
+
+//        if (meshCollision) cout << "Collision: t: " << t << ", normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << endl;
+//        if (meshCollision && thres >= t && t >= -thres) {
+//            cout << "Collision: t: " << t << ", normal: " << rayDirection[0] << ", " << rayDirection[1] << ", " << rayDirection[2] << endl;
+        if (meshCollision && COLLISION_THRESHOLD >= t && normal.dot(rayDirection) <= 0.0f) {
+            Vector3f intersectionPoint = rayOrigin + t * rayDirection;
+            constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
+        }
     }
+
+    // Check for plane collision
+//    bool planeCollision = planeIntersection(rayOrigin, rayDirection, t, normal);
+//    if (planeCollision) cout << "Collision: t: " << t << ", normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << endl;
+//    if (planeCollision && COLLISION_THRESHOLD >= t && normal.dot(rayDirection) <= 0.0f) {
+//        Vector3f intersectionPoint = rayOrigin + t * rayDirection;
+//        constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
+//    }
 }
 
 bool Simulation::planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal) {
@@ -222,7 +254,7 @@ bool Simulation::planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, fl
 
     t = num / denom;
 
-    return t >= 0.0f;
+    return true;
 }
 
 void Simulation::updateCollisionVelocities(CollisionConstraint* constraint) {
@@ -274,7 +306,7 @@ void Simulation::renderGUI() {
     ImGui::SliderFloat("##timeStep", &timeStep, 0.001f, 0.1f, "%.3f");
 
     ImGui::Text("Gravity");
-    ImGui::SliderFloat("##gravity", &gravity, -10.01f, 10.0f, "%.2f");
+    ImGui::SliderFloat("##gravity", &gravity, -10.0f, 10.0f, "%.2f");
 
     ImGui::Text("WindSpeed");
     ImGui::SliderFloat("##windSpeed", &windSpeed, 0.01f, 10.0f, "%.2f");

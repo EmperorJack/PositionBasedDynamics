@@ -12,7 +12,7 @@
 class Simulation {
 
     float COLLISION_THRESHOLD = 0.1f;
-    float CLOTH_THICKNESS = 0.75f;
+    float CLOTH_THICKNESS = 0.5f;
 
 public:
     Simulation();
@@ -25,8 +25,8 @@ public:
     void renderGUI();
 
     // Variables
-    int solverIterations = 6;
-    float timeStep = 0.08f;
+    int solverIterations = 5;
+    float timeStep = 0.05f;
     float gravity = 0.981f;
     float windSpeed = 2.5f;
     float velocityDamping = 1.0f;
