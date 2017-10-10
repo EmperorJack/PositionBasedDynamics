@@ -94,11 +94,10 @@ public:
 class TriangleCollisionConstraint : public CollisionConstraint {
 
 public:
-    TriangleCollisionConstraint(Mesh* mesh, int cardinality, Vector3f normal, int triangleIndex, float height) :
-        CollisionConstraint(mesh, cardinality, normal), triangleIndex(triangleIndex), height(height) {}
+    TriangleCollisionConstraint(Mesh* mesh, int cardinality, Vector3f normal, float height) :
+        CollisionConstraint(mesh, cardinality, normal), height(height) {}
     void project(Params params);
 
-    int triangleIndex;
     float height;
 
 };
@@ -110,6 +109,6 @@ FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
 DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance);
 BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);
 StaticCollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position);
-TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh* mesh, int vertexIndex, Vector3f normal, int triangleIndex, float height);
+TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, float height, int indexA, int indexB, int indexC);
 
 #endif //POSITIONBASEDDYNAMICS_CONSTRAINT_HPP

@@ -66,7 +66,7 @@ Simulation::Simulation() {
 //    staticObjects.push_back(simple);
 
 //    simulatedObjects.push_back(testCube);
-//    simulatedObjects.push_back(flag);
+    simulatedObjects.push_back(flag);
 //    simulatedObjects.push_back(flagHigh);
     simulatedObjects.push_back(simple);
 
@@ -133,6 +133,8 @@ void Simulation::simulate(Mesh* mesh) {
         generateCollisionConstraints(mesh, i, collisionConstraints);
     }
 
+    cout << collisionConstraints.size() << endl;
+
     // Setup params
     Params params;
     params.solverIterations = solverIterations;
@@ -179,12 +181,22 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
     int triangleIndex;
 
     // Check for self intersection
-    if (!mesh->isRigidBody && index == 3) {
+    if (!mesh->isRigidBody) {
         bool meshCollision = mesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
-//        if (meshCollision) cout << t << endl;
-        if (meshCollision && 0 >= t && t >= -CLOTH_THICKNESS) {
-//            cout << "c" << normal << endl << endl;
-            constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, triangleIndex, CLOTH_THICKNESS));
+
+        t = fabs(t);
+
+        if (meshCollision && 0 < t && t <= CLOTH_THICKNESS) {
+//        if (meshCollision && 0 >= t && t >= -CLOTH_THICKNESS) {
+            Triangle triangle = mesh->triangles[triangleIndex];
+
+            if ((mesh->vertices[triangle.v[0].p] - mesh->estimatePositions[index]).dot(normal) > 0.0f) {
+//                cout << "in front" << endl;
+                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[1].p, triangle.v[2].p));
+            } else {
+//                cout << "behind" << endl;
+                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[2].p, triangle.v[1].p));
+            }
         }
     }
 

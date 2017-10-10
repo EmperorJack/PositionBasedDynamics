@@ -78,9 +78,13 @@ StaticCollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index,
     return constraint;
 }
 
-TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh* mesh, int vertexIndex, Vector3f normal, int triangleIndex, float height) {
-    TriangleCollisionConstraint* constraint = new TriangleCollisionConstraint(mesh, 1, normal, triangleIndex, height);
+TriangleCollisionConstraint *
+buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, float height, int indexA, int indexB, int indexC) {
+    TriangleCollisionConstraint* constraint = new TriangleCollisionConstraint(mesh, 1, normal, height);
     constraint->indices.push_back(vertexIndex);
+    constraint->indices.push_back(indexA);
+    constraint->indices.push_back(indexB);
+    constraint->indices.push_back(indexC);
     return constraint;
 }
 
@@ -195,11 +199,9 @@ void StaticCollisionConstraint::project(Params params) {
 
 void TriangleCollisionConstraint::project(Params params) {
     Vector3f q = mesh->estimatePositions[indices[0]];
-
-    Triangle tri = mesh->triangles[triangleIndex];
-    Vector3f p1 = mesh->estimatePositions[tri.v[0].p];
-    Vector3f p3 = mesh->estimatePositions[tri.v[1].p];
-    Vector3f p2 = mesh->estimatePositions[tri.v[2].p];
+    Vector3f p1 = mesh->estimatePositions[indices[1]];
+    Vector3f p3 = mesh->estimatePositions[indices[2]];
+    Vector3f p2 = mesh->estimatePositions[indices[3]];
 
     // Check if constraint is already satisfied
     Vector3f n = (p2 - p1).cross(p3 - p1);
@@ -211,8 +213,6 @@ void TriangleCollisionConstraint::project(Params params) {
     Vector3f b = n;
 
     Vector3f displacement = a * b;
-
-//    cout << displacement << endl;
 
     mesh->estimatePositions[indices[0]] -= displacement;
 }
