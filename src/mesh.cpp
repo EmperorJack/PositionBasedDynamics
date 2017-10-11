@@ -70,7 +70,7 @@ bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector
     for (int triangleIndex = 0; triangleIndex < numFaces; triangleIndex++) {
         float tTri = INFINITY;
         float u, v;
-        if (rayTriangleIntersect(rayOrigin, rayDirection, tTri, triangleIndex, vertexIndex, u, v) && tTri < t) {
+        if (rayTriangleIntersect(rayOrigin, rayDirection, tTri, triangleIndex, vertexIndex, u, v) && fabs(tTri) < fabs(t)) {
             hit = true;
             t = tTri;
             closestIndex = triangleIndex;

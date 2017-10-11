@@ -186,8 +186,11 @@ void BendConstraint::project(Params params) {
 void StaticCollisionConstraint::project(Params params) {
     Vector3f p = mesh->estimatePositions[indices[0]];
 
+    Vector3f pointToPosition = p - position;
+    pointToPosition.normalize();
+
     // Check if constraint is already satisfied
-    if ((p - position).dot(normal) >= 0.0f) return;
+    if (pointToPosition.dot(normal) >= 0.0f) return;
 
     float a = (p - position).dot(normal);
     Vector3f b = (p - position) / ((p - position).norm());
@@ -207,11 +210,14 @@ void TriangleCollisionConstraint::project(Params params) {
     Vector3f n = (p2 - p1).cross(p3 - p1);
     n /= n.norm();
 
-    cout << "~" << normal << "vs" << n << "~~~" << endl << endl;
+//    cout << "~" << normal << "vs" << n << "~~~" << endl << endl;
 
     normal = n;
 
-    if ((q - p1).dot(n) - height >= 0.0f) return;
+    Vector3f qToP1 = q - p1;
+    qToP1.normalize();
+
+    if (qToP1.dot(n) - height >= 0.0f) return;
 
     float a = (q - p1).dot(n) - height;
     Vector3f b = n;
