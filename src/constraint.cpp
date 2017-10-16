@@ -139,7 +139,7 @@ void BendConstraint::project(Params params) {
     // Compute normals
     Vector3f n1 = p2Xp3 / p2Xp3.norm();
     Vector3f n2 = p2Xp4 / p2Xp4.norm();
-    float d = n1.transpose() * n2;
+    float d = n1.dot(n2);
 
     Vector3f q3 = (p2.cross(n2) + d * n1.cross(p2)) / (p2Xp3.norm());
     Vector3f q4 = (p2.cross(n1) + d * n2.cross(p2)) / (p2Xp4.norm());
@@ -165,6 +165,9 @@ void BendConstraint::project(Params params) {
     for (int i = 0; i < cardinality; i++) {
         coefficients.coeffRef(i, i) *= qSum;
     }
+
+    // Prevent issue where d falls out of range -1 to 1
+    d = fmax(fmin(d, 1.0f), -1.0f);
 
     float a = sqrtf(1.0f - d * d) * (acosf(d) - angle);
     RHS.row(0) = -a * q1;

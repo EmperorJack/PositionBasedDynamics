@@ -120,7 +120,7 @@ void Simulation::update() {
 
     // Update bounding boxes
     for (Mesh* mesh : simulatedObjects) {
-        mesh->updateBoundingBox();
+//        mesh->updateBoundingBox();
     }
 
     for (Mesh* mesh : simulatedObjects) {
