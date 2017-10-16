@@ -12,7 +12,7 @@
 class Simulation {
 
     float COLLISION_THRESHOLD = 0.01f;
-    float CLOTH_THICKNESS = 0.05f;
+    float CLOTH_THICKNESS = 0.1f;
 
 public:
     Simulation();

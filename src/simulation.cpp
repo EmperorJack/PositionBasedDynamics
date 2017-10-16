@@ -202,7 +202,7 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
     Vector3f normal;
     int triangleIndex;
 
-    // Check for self intersection
+    // Multiple dynamic object collision
 //    if (false && !mesh->isRigidBody) {
 //        bool meshCollision = mesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 //
@@ -218,49 +218,30 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
 //            }
 //        }
 //    }
-//    cout << endl << "TRI MESH DETECT" << endl;
+
     for (Mesh* staticMesh : staticObjects) {
         if (!staticMesh->isRigidBody) continue;
 
         bool meshCollision = staticMesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 
-//        if (meshCollision && -COLLISION_THRESHOLD <= t && t <= 0) {// && normal.dot(rayDirection) <= 0.0f) {
         if (meshCollision && (fabs(t) - CLOTH_THICKNESS) <= (mesh->vertices[index] - mesh->estimatePositions[index]).norm()) {
-//            if (normal.dot(rayDirection) <= 0.0f) normal = -normal;
 
-//            Triangle triangle = staticMesh->triangles[triangleIndex];
-//            Vector3f triangleToVertex = (staticMesh->vertices[triangle.v[0].p] - mesh->vertices[index]);
-//            triangleToVertex.normalize();
-
+            // Fix weird negative 0 issue
             if (normal[0] == -0) normal[0] = 0;
             if (normal[1] == -0) normal[1] = 0;
             if (normal[2] == -0) normal[2] = 0;
-//
-//            float dir = triangleToVertex.dot(normal);
 
-//            if (triangleToVertex.dot(normal) >= 0.0f) normal = -normal;
+            if (t > 0.0f) t -= CLOTH_THICKNESS;
+            else t += CLOTH_THICKNESS;
 
-            Vector3f intersectionPoint = (rayOrigin + (t + CLOTH_THICKNESS) * rayDirection);
+            Vector3f intersectionPoint = (rayOrigin + t * rayDirection);
 
-//            cout << "Collision: t: " << t << ", normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << ", dir: " << 0 << endl;
             constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
         }
     }
-
-//    cout << "~~~vs plane~~~" << endl;
-
-    // Check for plane collision
-//    bool planeCollision = planeIntersection(rayOrigin, rayDirection, t, normal);
-////    if (planeCollision) cout << "Collision: t: " << t << ", normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << endl;
-////    if (planeCollision && COLLISION_THRESHOLD >= t && normal.dot(rayDirection) <= 0.0f) {
-//    if (planeCollision && fabs(t) <= (mesh->vertices[index] - mesh->estimatePositions[index]).norm()) {
-//        Vector3f intersectionPoint = rayOrigin + t * rayDirection;
-//        cout << "Collision: t: " << t << ", normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << ", dir: " << 0 << endl;
-////        constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
-//    }
-//    cout << endl;
 }
 
+// Parametric plane collision
 bool Simulation::planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal) {
 
     // Hardcoded plane position for now

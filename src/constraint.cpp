@@ -210,8 +210,6 @@ void TriangleCollisionConstraint::project(Params params) {
     Vector3f n = (p2 - p1).cross(p3 - p1);
     n /= n.norm();
 
-//    cout << "~" << normal << "vs" << n << "~~~" << endl << endl;
-
     normal = n;
 
     Vector3f qToP1 = q - p1;
@@ -225,33 +223,4 @@ void TriangleCollisionConstraint::project(Params params) {
     Vector3f displacement = a * b;
 
     mesh->estimatePositions[indices[0]] -= displacement;
-
-//    MatrixXf RHS = MatrixXf::Zero(1, 3);
-//
-//    Vector3f p2Xp3 = p2.cross(p3);
-//
-//    // Compute normals
-//    Vector3f n1 = p2Xp3 / p2Xp3.norm();
-//
-//    // Compute coefficient matrix
-//    coefficients.resize(1, 1);
-//    coefficients.setZero();
-//
-//    float denominator = 0.0f;
-//    denominator += mesh->inverseMasses[indices[0]];
-//
-//    float wi = mesh->inverseMasses[indices[0]];
-//    coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
-//
-//    float qSum = q1.squaredNorm() + q2.squaredNorm() + q3.squaredNorm() + q4.squaredNorm();
-//
-//    coefficients.coeffRef(0, 0) *= qSum;
-//
-//    float a = (q - p1).dot(n) - height;
-//    RHS.row(0) = -a * q1;
-//
-//    MatrixXf displacements = coefficients.llt().solve(RHS);
-//
-//    Vector3f displacement = displacements.row(0);
-//    mesh->estimatePositions[indices[0]] += displacement;
 }
