@@ -25,7 +25,7 @@ public:
     void renderGUI();
 
     // Variables
-    int solverIterations = 5;
+    int solverIterations = 4;
     float timeStep = 0.05f;
     float gravity = 0.981f;
     float windSpeed = 2.5f;

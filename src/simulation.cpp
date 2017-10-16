@@ -136,23 +136,23 @@ void Simulation::simulate(Mesh* mesh) {
     if (mesh->gravityAffected) mesh->applyImpulse(timeStep * Vector3f(0, -gravity, 0));
     if (mesh->windAffected) mesh->applyImpulse(timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f)));
 
-    // Dampen velocities
-    for (int i = 0; i < mesh->numVertices; i++) {
-        // TODO
-        mesh->velocities[i] *= velocityDamping;
-    }
+    // Dampen velocities TODO
+    //for (int i = 0; i < mesh->numVertices; i++) {
+    //    mesh->velocities[i] *= velocityDamping;
+    //}
 
     mesh->estimatePositions.clear();
     mesh->estimatePositions.resize((size_t) mesh->numVertices, Vector3f::Zero());
 
     // Initialise estimate positions
+    #pragma omp parallel for
     for (int i = 0; i < mesh->numVertices; i++) {
         mesh->estimatePositions[i] = mesh->vertices[i] + timeStep * mesh->velocities[i];
     }
 
     // Generate collision constraints
     vector<CollisionConstraint*> collisionConstraints;
-//    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < mesh->numVertices; i++) {
         generateCollisionConstraints(mesh, i, collisionConstraints);
     }
@@ -166,27 +166,27 @@ void Simulation::simulate(Mesh* mesh) {
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
         //#pragma omp parallel for
-        //for (int c = 0; c < mesh->constraints.size(); c++) {
-        //    mesh->constraints[c]->project(solverIterations);
-        //}
-        for (Constraint* constraint : mesh->constraints) {
-            constraint->project(params);
+        for (int c = 0; c < mesh->constraints.size(); c++) {
+            mesh->constraints[c]->project(params);
         }
 
-        for (CollisionConstraint* constraint : collisionConstraints) {
-            constraint->project(params);
+        //#pragma omp parallel for
+        for (int c = 0; c < collisionConstraints.size(); c++) {
+            collisionConstraints[c]->project(params);
         }
     }
 
     // Update positions and velocities
+    #pragma omp parallel for
     for (int i = 0; i < mesh->numVertices; i++) {
         mesh->velocities[i] = (mesh->estimatePositions[i] - mesh->vertices[i]) / timeStep;
         mesh->vertices[i] = mesh->estimatePositions[i];
     }
 
     // Update velocities of colliding vertices
-    for (CollisionConstraint* constraint : collisionConstraints) {
-        updateCollisionVelocities(constraint);
+    #pragma omp parallel for
+    for (int c = 0; c < collisionConstraints.size(); c++) {
+        updateCollisionVelocities(collisionConstraints[c]);
     }
 }
 
