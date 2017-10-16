@@ -23,12 +23,17 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
     // Setup simulation
     reset();
     inverseMasses.resize((size_t) numVertices, 1.0f);
+
+    // Setup bounding box
+    boundingBox = new BoundingBox();
 }
 
 Mesh::~Mesh() {
     for (Constraint* constraint : constraints) {
         delete constraint;
     }
+
+    delete boundingBox;
 }
 
 void Mesh::generateSurfaceNormals() {
@@ -57,10 +62,40 @@ void Mesh::applyImpulse(Vector3f force) {
     }
 }
 
+void Mesh::updateBoundingBox() {
+    float xMin = INFINITY;
+    float xMax = -INFINITY;
+    float yMin = INFINITY;
+    float yMax = -INFINITY;
+    float zMin = INFINITY;
+    float zMax = -INFINITY;
+
+    // Compute the box that bounds the mesh
+    for (int i = 0; i < numVertices; i++) {
+        Vector3f vertex = vertices[i];
+
+        if (vertex[0] < xMin) xMin = vertex[0];
+        if (vertex[0] > xMax) xMax = vertex[0];
+
+        if (vertex[1] < yMin) yMin = vertex[1];
+        if (vertex[1] > yMax) yMax = vertex[1];
+
+        if (vertex[2] < zMin) zMin = vertex[2];
+        if (vertex[2] > zMax) zMax = vertex[2];
+    }
+
+    boundingBox->xMin = xMin;
+    boundingBox->xMax = xMax;
+    boundingBox->yMin = yMin;
+    boundingBox->yMax = yMax;
+    boundingBox->zMin = zMin;
+    boundingBox->zMax = zMax;
+}
+
 bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal, int vertexIndex, int &triHitIndex) {
 
     // Ensure the ray intersects the bounding box before testing each triangle
-    //if (!boundingBox->intersect(ray)) return false;
+    if (!boundingBox->intersect(rayOrigin, rayDirection)) return false;
 
     bool hit = false;
     t = INFINITY;

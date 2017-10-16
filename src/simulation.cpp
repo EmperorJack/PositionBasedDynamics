@@ -81,6 +81,10 @@ Simulation::Simulation() {
     staticObjects.push_back(flagPole2);
     staticObjects.push_back(passiveCube);
 
+    for (Mesh* mesh : staticObjects) {
+        mesh->updateBoundingBox();
+    }
+
     simulatedObjects.push_back(testCube);
     simulatedObjects.push_back(flag);
     simulatedObjects.push_back(flagHigh);
@@ -113,10 +117,12 @@ void Simulation::reset() {
     }
 }
 void Simulation::update() {
-    //#pragma omp parallel for
-    //for (int i = 0; i < simulatedObjects.size(); i++) {
-    //    simulate(simulatedObjects[i]);
-    //}
+
+    // Update bounding boxes
+    for (Mesh* mesh : simulatedObjects) {
+        mesh->updateBoundingBox();
+    }
+
     for (Mesh* mesh : simulatedObjects) {
         simulate(mesh);
     }
