@@ -151,6 +151,30 @@ void Scene::setupConfigurationC() {
     Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
     plane->isRigidBody = true;
 
+    Vector3f solidColour = { 1.0f, 1.0f, 1.0f };
+    Mesh* attachPoints = new Mesh("../resources/models/sceneC/attachPoints.obj", planeColour);
+    attachPoints->isRigidBody = true;
+
+    Vector3f clothColour = { 0.8f, 0.4f, 0.1f };
+    Mesh* cloth = new Mesh("../resources/models/sceneC/cloth.obj", clothColour);
+    cloth->gravityAffected = true;
+    cloth->windAffected = true;
+
+    Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour);
+    bar->isRigidBody = true;
+    bar->gravityAffected = true;
+
+    buildEdgeConstraints(cloth);
+    buildBendConstraints(cloth);
+
+    buildEdgeConstraints(bar);
+    buildBendConstraints(bar);
+
+    configurationC->staticObjects.push_back(plane);
+    configurationC->staticObjects.push_back(attachPoints);
+    configurationC->simulatedObjects.push_back(cloth);
+    configurationC->simulatedObjects.push_back(bar);
+
 //    Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
 //    Mesh* simple = new Mesh("../resources/models/selfIntersectionTest.obj", planeColour);
 //    simple->gravityAffected = true;
@@ -161,6 +185,5 @@ void Scene::setupConfigurationC() {
 //    simple->constraints.push_back(buildFixedConstraint(simple, 3, simple->initialVertices[3]));
 //    buildEdgeConstraints(simple);
 
-    configurationC->staticObjects.push_back(plane);
 //    configurationC->simulatedObjects.push_back(simple);
 }
