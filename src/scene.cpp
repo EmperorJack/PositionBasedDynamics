@@ -74,30 +74,29 @@ void Scene::render(bool wireframe) {
 void Scene::setupConfigurationA() {
     configurationA = new Configuration();
 
-    Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-    Mesh* testCube = new Mesh("../resources/models/cube.obj", meshColour);
-    testCube->gravityAffected = true;
-    testCube->isRigidBody = true;
+//    Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
+//    Mesh* testCube = new Mesh("../resources/models/cube.obj", meshColour);
+//    testCube->gravityAffected = true;
+//    testCube->isRigidBody = true;
 
     Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
     Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
     plane->isRigidBody = true;
 
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
-    Mesh* flagPole = new Mesh("../resources/models/flagPole.obj", flagPoleColour);
-    Mesh* flagPole2 = new Mesh("../resources/models/flagPole2.obj", flagPoleColour);
+    Mesh* flagPole = new Mesh("../resources/models/sceneA/flagPole.obj", flagPoleColour);
+    Mesh* flagPole2 = new Mesh("../resources/models/sceneA/flagPole2.obj", flagPoleColour);
 
     Vector3f flagColour = { 0.6f, 0.0f, 0.0f };
-    Mesh* flag = new Mesh("../resources/models/flag.obj", flagColour);
+    Mesh* flag = new Mesh("../resources/models/sceneA/flag.obj", flagColour);
     flag->gravityAffected = true;
     flag->windAffected = true;
-    Mesh* flagHigh = new Mesh("../resources/models/flagHigh.obj", flagColour);
+    Mesh* flagHigh = new Mesh("../resources/models/sceneA/flagHigh.obj", flagColour);
     flagHigh->gravityAffected = true;
     flagHigh->windAffected = true;
 
-    // Setup constraints
-    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
-    buildEdgeConstraints(testCube);
+//    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
+//    buildEdgeConstraints(testCube);
 
     for (int i = 0; i < 7; i++) {
         flag->constraints.push_back(buildFixedConstraint(flag, i, flag->initialVertices[i]));
@@ -114,12 +113,12 @@ void Scene::setupConfigurationA() {
     configurationA->staticObjects.push_back(plane);
     configurationA->staticObjects.push_back(flagPole);
     configurationA->staticObjects.push_back(flagPole2);
-    configurationA->simulatedObjects.push_back(testCube);
+//    configurationA->simulatedObjects.push_back(testCube);
     configurationA->simulatedObjects.push_back(flag);
     configurationA->simulatedObjects.push_back(flagHigh);
 
-    testCube->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
-    testCube->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
+//    testCube->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
+//    testCube->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
 }
 
 void Scene::setupConfigurationB() {
@@ -130,19 +129,19 @@ void Scene::setupConfigurationB() {
     plane->isRigidBody = true;
 
     Vector3f clothColour = { 0.0f, 0.6f, 0.0f };
-    Mesh* cloth = new Mesh("../resources/models/cloth.obj", clothColour);
+    Mesh* cloth = new Mesh("../resources/models/sceneB/cloth.obj", clothColour);
     cloth->gravityAffected = true;
 
-    Vector3f passiveCubeColour = { 0.5f, 0.5f, 0.5f };
-    Mesh* passiveCube = new Mesh("../resources/models/passiveCube.obj", planeColour);
-    passiveCube->isRigidBody = true;
+    Vector3f resetObjectColour = { 0.5f, 0.5f, 0.5f };
+    Mesh* restObject = new Mesh("../resources/models/sceneB/sphere.obj", resetObjectColour);
+    restObject->isRigidBody = true;
 
     buildEdgeConstraints(cloth);
     buildBendConstraints(cloth);
 
     configurationB->staticObjects.push_back(plane);
     configurationB->simulatedObjects.push_back(cloth);
-    configurationB->staticObjects.push_back(passiveCube);
+    configurationB->staticObjects.push_back(restObject);
 }
 
 void Scene::setupConfigurationC() {

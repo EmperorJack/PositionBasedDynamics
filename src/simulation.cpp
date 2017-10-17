@@ -139,14 +139,14 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
 
         bool meshCollision = staticMesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 
-        if (meshCollision && (fabs(t) - CLOTH_THICKNESS) <= (mesh->vertices[index] - mesh->estimatePositions[index]).norm()) {
+        if (meshCollision && (fabs(t)) <= (mesh->vertices[index] - mesh->estimatePositions[index]).norm() + CLOTH_THICKNESS) {
 
             // Fix weird negative 0 issue
             if (normal[0] == -0) normal[0] = 0;
             if (normal[1] == -0) normal[1] = 0;
             if (normal[2] == -0) normal[2] = 0;
 
-            if (t > 0.0f) t -= CLOTH_THICKNESS;
+            if (t >= 0.0f) t -= CLOTH_THICKNESS;
             else t += CLOTH_THICKNESS;
 
             Vector3f intersectionPoint = (rayOrigin + t * rayDirection);
@@ -192,6 +192,11 @@ void Simulation::renderGUI() {
 
     ImGui::Begin("Simulator");
 
+    ImGui::Text("Scene Selection");
+    if (ImGui::Button("Show Scene A")) scene->setConfiguration(0);
+    if (ImGui::Button("Show Scene B")) scene->setConfiguration(1);
+    if (ImGui::Button("Show Scene C")) scene->setConfiguration(2);
+
     ImGui::Text("Solver Iterations");
     ImGui::SliderInt("##solverIterations", &solverIterations, 1, 50, "%.0f");
 
@@ -208,17 +213,13 @@ void Simulation::renderGUI() {
     ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");
 
     ImGui::Text("Stretch Factor");
-    ImGui::SliderFloat("##stretchFactor", &stretchFactor, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##stretchFactor", &stretchFactor, 0.01f, 1.0f, "%.3f");
 
     ImGui::Text("Bend Factor");
     ImGui::SliderFloat("##bendFactor", &bendFactor, 0.0f, 1.0f, "%.3f");
 
     ImGui::Text("Wireframe");
     ImGui::Checkbox("##wireframe", &wireframe);
-
-    if (ImGui::Button("Show Scene A")) scene->setConfiguration(0);
-    if (ImGui::Button("Show Scene B")) scene->setConfiguration(1);
-    if (ImGui::Button("Show Scene C")) scene->setConfiguration(2);
 
     ImGui::End();
 }
