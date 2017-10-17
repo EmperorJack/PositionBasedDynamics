@@ -44,7 +44,6 @@ void Simulation::update() {
 }
 
 void Simulation::simulate(Configuration *configuration) {
-    cout << "Start Simulation" << endl;
 
     // Apply external forces
     for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
@@ -58,21 +57,22 @@ void Simulation::simulate(Configuration *configuration) {
     //}
 
     // Initialise estimate positions
-    //#pragma omp parallel for
     for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
+        #pragma omp parallel for
         for (int i = 0; i < mesh->numVertices; i++) {
             configuration->estimatePositions[i + mesh->estimatePositionsOffset] = mesh->vertices[i] + timeStep * mesh->velocities[i];
         }
     }
 
-    cout << "a" << endl;
+    // Clear existing collision constraints
+    for (int c = 0; c < configuration->collisionConstraints.size(); c++) delete configuration->collisionConstraints[c];
+    configuration->collisionConstraints.clear();
 
     // Generate collision constraints
-    vector<CollisionConstraint*> collisionConstraints;
     for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
-        #pragma omp parallel for
+        //#pragma omp parallel for // There is a thread-conflict when this is used
         for (int i = 0; i < mesh->numVertices; i++) {
-            generateCollisionConstraints(configuration, mesh, i, collisionConstraints);
+            generateCollisionConstraints(configuration, mesh, i);
         }
     }
 
@@ -82,8 +82,6 @@ void Simulation::simulate(Configuration *configuration) {
     params.stretchFactor = stretchFactor;
     params.bendFactor = bendFactor;
 
-    cout << "b" << endl;
-
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
         //#pragma omp parallel for
@@ -92,12 +90,10 @@ void Simulation::simulate(Configuration *configuration) {
         }
 
         //#pragma omp parallel for
-        for (int c = 0; c < collisionConstraints.size(); c++) {
-            //collisionConstraints[c]->project(configuration, params);
+        for (int c = 0; c < configuration->collisionConstraints.size(); c++) {
+            configuration->collisionConstraints[c]->project(configuration, params);
         }
     }
-
-    cout << "c" << endl;
 
     // Update positions and velocities
     for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
@@ -110,19 +106,17 @@ void Simulation::simulate(Configuration *configuration) {
 
     // Update velocities of colliding vertices
     #pragma omp parallel for
-    for (int c = 0; c < collisionConstraints.size(); c++) {
-//        updateCollisionVelocities(collisionConstraints[c]);
+    for (int c = 0; c < configuration->collisionConstraints.size(); c++) {
+        updateCollisionVelocities(configuration->collisionConstraints[c]);
     }
-
-//    for (CollisionConstraint* collisionConstraint : collisionConstraints) delete collisionConstraint;
 }
 
-void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh *mesh, int index, vector<CollisionConstraint*> &constraints) {
+void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh *mesh, int index) {
 
     // Setup ray
     Vector3f rayOrigin = mesh->vertices[index];
     Vector3f vertexToEstimate = mesh->vertices[index] - configuration->estimatePositions[mesh->estimatePositionsOffset + index];
-    Vector3f rayDirection = vertexToEstimate;
+    Vector3f rayDirection = Vector3f(vertexToEstimate);
     rayDirection.normalize();
 
     // Setup intersection variables
@@ -140,9 +134,9 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
 //            Triangle triangle = mesh->triangles[triangleIndex];
 //
 //            if ((mesh->vertices[triangle.v[0].p] - mesh->vertices[index]).dot(normal) > 0.0f) {
-//                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[1].p, triangle.v[2].p)));
+//                configuration->collisionConstraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[1].p, triangle.v[2].p)));
 //            } else {
-//                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[2].p, triangle.v[1].p)));
+//                configuration->collisionConstraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[2].p, triangle.v[1].p)));
 //            }
 //        }
 //    }
@@ -152,7 +146,7 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
 
         bool meshCollision = staticMesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 
-        if (meshCollision && fabs(t) <= (vertexToEstimate).norm() + CLOTH_THICKNESS) {
+        if (meshCollision && fabs(t) * 0.5f <= (vertexToEstimate).norm() + CLOTH_THICKNESS) {
 
             // Fix weird negative 0 issue
             if (normal[0] == -0) normal[0] = 0;
@@ -163,8 +157,9 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
             else t += CLOTH_THICKNESS;
 
             Vector3f intersectionPoint = (rayOrigin + t * rayDirection);
-            
-            constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
+
+            CollisionConstraint* constraint = buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint);
+            configuration->collisionConstraints.push_back(constraint);
         }
     }
 }
@@ -189,7 +184,8 @@ bool Simulation::planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, fl
 
 void Simulation::updateCollisionVelocities(CollisionConstraint* constraint) {
     Mesh* mesh = constraint->mesh;
-    int index = constraint->indices[0];
+    int index = constraint->indices[0] - mesh->estimatePositionsOffset;
+
     Vector3f updatedVelocity = mesh->velocities[index];
 
     // Reflect the velocity vector around the collision normal
@@ -222,8 +218,8 @@ void Simulation::renderGUI() {
     ImGui::Text("WindSpeed");
     ImGui::SliderFloat("##windSpeed", &windSpeed, 0.01f, 10.0f, "%.2f");
 
-    ImGui::Text("Velocity Damping");
-    ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");
+    //ImGui::Text("Velocity Damping");
+    //ImGui::SliderFloat("##velocityDamping", &velocityDamping, 0.5f, 1.0f, "%.3f");
 
     ImGui::Text("Stretch Factor");
     ImGui::SliderFloat("##stretchFactor", &stretchFactor, 0.01f, 1.0f, "%.3f");

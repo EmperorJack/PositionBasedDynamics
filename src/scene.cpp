@@ -157,7 +157,7 @@ void Scene::setupConfigurationC() {
     cloth->windAffected = true;
 
     Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour);
-//    bar->isRigidBody = true;
+    bar->isRigidBody = true;
     bar->gravityAffected = true;
 
     configurationC->staticObjects.push_back(attachPoints);

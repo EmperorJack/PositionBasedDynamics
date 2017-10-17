@@ -46,7 +46,7 @@ void buildBendConstraints(Configuration* configuration, Mesh* mesh) {
 }
 
 void buildFixedConstraint(Configuration* configuration, Mesh* mesh, int index, Vector3f target) {
-    configuration->inverseMasses[index] = EPSILON;
+    configuration->inverseMasses[index + mesh->estimatePositionsOffset] = EPSILON;
 
     Constraint* constraint = new FixedConstraint(mesh, 1, target);
     constraint->indices.push_back(index + mesh->estimatePositionsOffset);

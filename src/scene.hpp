@@ -11,6 +11,7 @@
 #include <mesh.hpp>
 
 class Constraint;
+class CollisionConstraint;
 
 struct Configuration {
     vector<Mesh*> staticObjects;
@@ -18,11 +19,13 @@ struct Configuration {
     vector<Vector3f> estimatePositions;
     vector<float> inverseMasses;
     vector<Constraint*> constraints;
+    vector<CollisionConstraint*> collisionConstraints;
 
     ~Configuration() {
         for (Mesh* mesh : staticObjects) delete mesh;
         for (Mesh* mesh : simulatedObjects) delete mesh;
         for (Constraint* constraint : constraints) delete constraint;
+        for (CollisionConstraint* constraint : collisionConstraints) delete constraint;
     }
 };
 
