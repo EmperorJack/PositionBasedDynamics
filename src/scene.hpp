@@ -9,12 +9,24 @@
 #include <camera.hpp>
 #include <mesh.hpp>
 
+struct Configuration {
+    vector<Mesh*> staticObjects;
+    vector<Mesh*> simulatedObjects;
+
+    ~Configuration() {
+        for (Mesh* mesh : staticObjects) delete mesh;
+        for (Mesh* mesh : simulatedObjects) delete mesh;
+    }
+};
+
 class Scene {
 
 public:
     Scene();
     ~Scene();
 
+    void reset();
+    void setConfiguration(int index);
     void render(bool wireframe);
 
     // Camera
@@ -22,8 +34,16 @@ public:
     float pitch, yaw, roll;
 
     // Objects
-    vector<Mesh*> staticObjects;
-    vector<Mesh*> simulatedObjects;
+    Configuration* configuration;
+
+private:
+    void setupConfigurationA();
+    void setupConfigurationB();
+    void setupConfigurationC();
+
+    Configuration* configurationA;
+    Configuration* configurationB;
+    Configuration* configurationC;
 
 };
 

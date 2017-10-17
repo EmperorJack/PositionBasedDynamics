@@ -26,18 +26,16 @@ Simulation::~Simulation() {
 }
 
 void Simulation::reset() {
-    for (Mesh* mesh : scene->simulatedObjects) {
-        mesh->reset();
-    }
+    scene->reset();
 }
 void Simulation::update() {
 
     // Update bounding boxes
-    for (Mesh* mesh : scene->simulatedObjects) {
+    for (Mesh* mesh : scene->configuration->simulatedObjects) {
         //mesh->updateBoundingBox();
     }
 
-    for (Mesh* mesh : scene->simulatedObjects) {
+    for (Mesh* mesh : scene->configuration->simulatedObjects) {
         simulate(mesh);
     }
 
@@ -136,7 +134,7 @@ void Simulation::generateCollisionConstraints(Mesh* mesh, int index, vector<Coll
 //        }
 //    }
 
-    for (Mesh* staticMesh : scene->staticObjects) {
+    for (Mesh* staticMesh : scene->configuration->staticObjects) {
         if (!staticMesh->isRigidBody) continue;
 
         bool meshCollision = staticMesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
@@ -217,6 +215,10 @@ void Simulation::renderGUI() {
 
     ImGui::Text("Wireframe");
     ImGui::Checkbox("##wireframe", &wireframe);
+
+    if (ImGui::Button("Show Scene A")) scene->setConfiguration(0);
+    if (ImGui::Button("Show Scene B")) scene->setConfiguration(1);
+    if (ImGui::Button("Show Scene C")) scene->setConfiguration(2);
 
     ImGui::End();
 }

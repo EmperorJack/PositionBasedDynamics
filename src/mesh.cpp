@@ -26,6 +26,7 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
 
     // Setup bounding box
     boundingBox = new BoundingBox();
+    updateBoundingBox();
 }
 
 Mesh::~Mesh() {
