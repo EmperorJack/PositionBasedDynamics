@@ -8,7 +8,7 @@
 #include <shaderLoader.hpp>
 #include <mesh.hpp>
 
-Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
+Mesh::Mesh(string filename, Vector3f colour, float inverseMass) : colour(colour), inverseMass(inverseMass) {
     parseObjFile(filename);
 
     initialVertices = vertices;
@@ -22,7 +22,6 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
 
     // Setup simulation
     reset();
-    inverseMasses.resize((size_t) numVertices, 1.0f);
 
     // Setup bounding box
     boundingBox = new BoundingBox();

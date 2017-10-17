@@ -11,7 +11,7 @@ void buildEdgeConstraints(Configuration* configuration, Mesh* mesh) {
         int v0 = edge.v[0].p;
         int v1 = edge.v[1].p;
 
-        configuration->constraints.push_back(buildDistanceConstraint(mesh, v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm()));
+        buildDistanceConstraint(configuration, mesh, v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm());
     }
 }
 
@@ -41,50 +41,53 @@ void buildBendConstraints(Configuration* configuration, Mesh* mesh) {
         Vector3f n2 = mesh->vertices[p2].cross(mesh->vertices[p4]) / mesh->vertices[p2].cross(mesh->vertices[p4]).norm();
         float d = n1.dot(n2);
 
-        configuration->constraints.push_back(buildBendConstraint(mesh, p1, p2, p3, p4, acosf(d)));
+        buildBendConstraint(configuration, mesh, p1, p2, p3, p4, acosf(d));
     }
 }
 
-FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target) {
-    mesh->inverseMasses[index] = EPSILON;
+void buildFixedConstraint(Configuration* configuration, Mesh* mesh, int index, Vector3f target) {
+    configuration->inverseMasses[index] = EPSILON;
 
-    FixedConstraint* constraint = new FixedConstraint(mesh, 1, target);
-    constraint->indices.push_back(index);
+    Constraint* constraint = new FixedConstraint(mesh, 1, target);
+    constraint->indices.push_back(index + mesh->estimatePositionsOffset);
+
+    configuration->constraints.push_back(constraint);
+}
+
+void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, float distance) {
+    Constraint* constraint = new DistanceConstraint(mesh, 2, distance);
+    constraint->indices.push_back(indexA + mesh->estimatePositionsOffset);
+    constraint->indices.push_back(indexB + mesh->estimatePositionsOffset);
+
+    constraint->preCompute(configuration);
+
+    configuration->constraints.push_back(constraint);
+}
+
+void buildBendConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle) {
+    Constraint* constraint = new BendConstraint(mesh, 4, angle);
+    constraint->indices.push_back(indexA + mesh->estimatePositionsOffset);
+    constraint->indices.push_back(indexB + mesh->estimatePositionsOffset);
+    constraint->indices.push_back(indexC + mesh->estimatePositionsOffset);
+    constraint->indices.push_back(indexD + mesh->estimatePositionsOffset);
+
+    configuration->constraints.push_back(constraint);
+}
+
+CollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position) {
+    CollisionConstraint* constraint = new StaticCollisionConstraint(mesh, 1, normal, position);
+    constraint->indices.push_back(index + mesh->estimatePositionsOffset);
+
     return constraint;
 }
 
-DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance) {
-    DistanceConstraint* constraint = new DistanceConstraint(mesh, 2, distance);
-    constraint->indices.push_back(indexA);
-    constraint->indices.push_back(indexB);
+CollisionConstraint* buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, float height, int indexA, int indexB, int indexC) {
+    CollisionConstraint* constraint = new TriangleCollisionConstraint(mesh, 1, normal, height);
+    constraint->indices.push_back(vertexIndex + mesh->estimatePositionsOffset);
+    constraint->indices.push_back(indexA + mesh->estimatePositionsOffset);
+    constraint->indices.push_back(indexB + mesh->estimatePositionsOffset);
+    constraint->indices.push_back(indexC + mesh->estimatePositionsOffset);
 
-    constraint->preCompute();
-    return constraint;
-}
-
-BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle) {
-    BendConstraint* constraint = new BendConstraint(mesh, 4, angle);
-    constraint->indices.push_back(indexA);
-    constraint->indices.push_back(indexB);
-    constraint->indices.push_back(indexC);
-    constraint->indices.push_back(indexD);
-
-    return constraint;
-}
-
-StaticCollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position) {
-    StaticCollisionConstraint* constraint = new StaticCollisionConstraint(mesh, 1, normal, position);
-    constraint->indices.push_back(index);
-    return constraint;
-}
-
-TriangleCollisionConstraint *
-buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, float height, int indexA, int indexB, int indexC) {
-    TriangleCollisionConstraint* constraint = new TriangleCollisionConstraint(mesh, 1, normal, height);
-    constraint->indices.push_back(vertexIndex);
-    constraint->indices.push_back(indexA);
-    constraint->indices.push_back(indexB);
-    constraint->indices.push_back(indexC);
     return constraint;
 }
 
@@ -92,12 +95,12 @@ void FixedConstraint::project(Configuration* configuration, Params params) {
     configuration->estimatePositions[indices[0]] = target;
 }
 
-void DistanceConstraint::preCompute() {
+void DistanceConstraint::preCompute(Configuration* configuration) {
     coefficients.resize(cardinality, cardinality);
     coefficients.setZero();
 
-    float w1 = mesh->inverseMasses[indices[0]];
-    float w2 = mesh->inverseMasses[indices[1]];
+    float w1 = configuration->inverseMasses[indices[0]];
+    float w2 = configuration->inverseMasses[indices[1]];
     coefficients.coeffRef(0, 0) = 1.0f / (w1 / (w1 + w2));
     coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
 }
@@ -151,11 +154,11 @@ void BendConstraint::project(Configuration* configuration, Params params) {
 
     float denominator = 0.0f;
     for (int i = 0; i < cardinality; i++) {
-        denominator += mesh->inverseMasses[indices[i]];
+        denominator += configuration->inverseMasses[indices[i]];
     }
 
     for (int i = 0; i < cardinality; i++) {
-        float wi = mesh->inverseMasses[indices[i]];
+        float wi = configuration->inverseMasses[indices[i]];
         coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
     }
 

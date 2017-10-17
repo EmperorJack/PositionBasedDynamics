@@ -28,7 +28,7 @@ class Constraint {
 public:
     Constraint(Mesh* mesh, int cardinality) :
             mesh(mesh), cardinality(cardinality) {}
-    virtual void preCompute() {}
+    virtual void preCompute(Configuration* configuration) {}
     virtual void project(Configuration* configuration, Params params) {}
 
     int cardinality;
@@ -54,7 +54,7 @@ class DistanceConstraint : public Constraint {
 public:
     DistanceConstraint(Mesh* mesh, int cardinality, float distance) :
             Constraint(mesh, cardinality), distance(distance) {}
-    void preCompute();
+    void preCompute(Configuration* configuration);
     void project(Configuration* configuration, Params params);
 
     float distance;
@@ -107,10 +107,10 @@ public:
 // Constraint building
 void buildEdgeConstraints(Configuration* configuration, Mesh* mesh);
 void buildBendConstraints(Configuration* configuration, Mesh* mesh);
-FixedConstraint* buildFixedConstraint(Mesh* mesh, int index, Vector3f target);
-DistanceConstraint* buildDistanceConstraint(Mesh* mesh, int indexA, int indexB, float distance);
-BendConstraint* buildBendConstraint(Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);
-StaticCollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position);
-TriangleCollisionConstraint* buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, float height, int indexA, int indexB, int indexC);
+void buildFixedConstraint(Configuration* configuration, Mesh* mesh, int index, Vector3f target);
+void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, float distance);
+void buildBendConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);
+CollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position);
+CollisionConstraint* buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, float height, int indexA, int indexB, int indexC);
 
 #endif //POSITIONBASEDDYNAMICS_CONSTRAINT_HPP

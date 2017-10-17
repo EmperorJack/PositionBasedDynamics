@@ -31,11 +31,11 @@ void Simulation::reset() {
 void Simulation::update() {
 
     // Update bounding boxes
-    for (Mesh* mesh : scene->configuration->simulatedObjects) {
+    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
         //mesh->updateBoundingBox();
     }
 
-    simulate(scene->configuration);
+    simulate(scene->currentConfiguration);
 
     windOscillation += 0.05f;
 
@@ -44,9 +44,10 @@ void Simulation::update() {
 }
 
 void Simulation::simulate(Configuration *configuration) {
+    cout << "Start Simulation" << endl;
 
     // Apply external forces
-    for (Mesh* mesh : scene->configuration->simulatedObjects) {
+    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
         if (mesh->gravityAffected) mesh->applyImpulse(timeStep * Vector3f(0, -gravity, 0));
         if (mesh->windAffected) mesh->applyImpulse(timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f)));
     }
@@ -56,26 +57,22 @@ void Simulation::simulate(Configuration *configuration) {
     //    mesh->velocities[i] *= velocityDamping;
     //}
 
-    configuration->estimatePositions.clear();
-//    configuration->estimatePositions.resize((size_t) configuration->numVertices, Vector3f::Zero());
-
     // Initialise estimate positions
     //#pragma omp parallel for
-    for (Mesh* mesh : scene->configuration->simulatedObjects) {
-        mesh->estimatePositionsOffset = (int) configuration->estimatePositions.size();
-
+    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
         for (int i = 0; i < mesh->numVertices; i++) {
-            Vector3f position = mesh->vertices[i] + timeStep * mesh->velocities[i];
-            configuration->estimatePositions.push_back(position);
+            configuration->estimatePositions[i + mesh->estimatePositionsOffset] = mesh->vertices[i] + timeStep * mesh->velocities[i];
         }
     }
 
+    cout << "a" << endl;
+
     // Generate collision constraints
     vector<CollisionConstraint*> collisionConstraints;
-    for (Mesh* mesh : scene->configuration->simulatedObjects) {
+    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
         #pragma omp parallel for
         for (int i = 0; i < mesh->numVertices; i++) {
-            //generateCollisionConstraints(configuration, mesh, i, collisionConstraints);
+            generateCollisionConstraints(configuration, mesh, i, collisionConstraints);
         }
     }
 
@@ -84,6 +81,8 @@ void Simulation::simulate(Configuration *configuration) {
     params.solverIterations = solverIterations;
     params.stretchFactor = stretchFactor;
     params.bendFactor = bendFactor;
+
+    cout << "b" << endl;
 
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
@@ -94,12 +93,14 @@ void Simulation::simulate(Configuration *configuration) {
 
         //#pragma omp parallel for
         for (int c = 0; c < collisionConstraints.size(); c++) {
-            collisionConstraints[c]->project(configuration, params);
+            //collisionConstraints[c]->project(configuration, params);
         }
     }
 
+    cout << "c" << endl;
+
     // Update positions and velocities
-    for (Mesh* mesh : scene->configuration->simulatedObjects) {
+    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
         #pragma omp parallel for
         for (int i = 0; i < mesh->numVertices; i++) {
             mesh->velocities[i] = (configuration->estimatePositions[mesh->estimatePositionsOffset + i] - mesh->vertices[i]) / timeStep;
@@ -110,15 +111,18 @@ void Simulation::simulate(Configuration *configuration) {
     // Update velocities of colliding vertices
     #pragma omp parallel for
     for (int c = 0; c < collisionConstraints.size(); c++) {
-        updateCollisionVelocities(collisionConstraints[c]);
+//        updateCollisionVelocities(collisionConstraints[c]);
     }
+
+//    for (CollisionConstraint* collisionConstraint : collisionConstraints) delete collisionConstraint;
 }
 
-void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh *mesh, int index, vector<CollisionConstraint *> &constraints) {
+void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh *mesh, int index, vector<CollisionConstraint*> &constraints) {
 
     // Setup ray
     Vector3f rayOrigin = mesh->vertices[index];
-    Vector3f rayDirection = mesh->vertices[index] - configuration->estimatePositions[mesh->estimatePositionsOffset + index];
+    Vector3f vertexToEstimate = mesh->vertices[index] - configuration->estimatePositions[mesh->estimatePositionsOffset + index];
+    Vector3f rayDirection = vertexToEstimate;
     rayDirection.normalize();
 
     // Setup intersection variables
@@ -126,7 +130,7 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
     Vector3f normal;
     int triangleIndex;
 
-    // Multiple dynamic object collision
+    // Dynamic object collision
 //    if (false && !mesh->isRigidBody) {
 //        bool meshCollision = mesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 //
@@ -136,19 +140,19 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
 //            Triangle triangle = mesh->triangles[triangleIndex];
 //
 //            if ((mesh->vertices[triangle.v[0].p] - mesh->vertices[index]).dot(normal) > 0.0f) {
-//                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[1].p, triangle.v[2].p));
+//                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[1].p, triangle.v[2].p)));
 //            } else {
-//                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[2].p, triangle.v[1].p));
+//                constraints.push_back(buildTriangleCollisionConstraint(mesh, index, normal, CLOTH_THICKNESS, triangle.v[0].p, triangle.v[2].p, triangle.v[1].p)));
 //            }
 //        }
 //    }
 
-    for (Mesh* staticMesh : scene->configuration->staticObjects) {
+    for (Mesh* staticMesh : configuration->staticObjects) {
         if (!staticMesh->isRigidBody) continue;
 
         bool meshCollision = staticMesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 
-        if (meshCollision && (fabs(t)) <= (mesh->vertices[index] - configuration->estimatePositions[mesh->estimatePositionsOffset + index]).norm() + CLOTH_THICKNESS) {
+        if (meshCollision && fabs(t) <= (vertexToEstimate).norm() + CLOTH_THICKNESS) {
 
             // Fix weird negative 0 issue
             if (normal[0] == -0) normal[0] = 0;
@@ -159,7 +163,7 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
             else t += CLOTH_THICKNESS;
 
             Vector3f intersectionPoint = (rayOrigin + t * rayDirection);
-
+            
             constraints.push_back(buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint));
         }
     }
@@ -176,7 +180,7 @@ bool Simulation::planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, fl
     float denom = normal.dot(rayDirection);
 
     // Ray is parallel with plane
-    if (fabs(denom) < 0.000001f) return false;
+    if (fabs(denom) < EPSILON) return false;
 
     t = num / denom;
 

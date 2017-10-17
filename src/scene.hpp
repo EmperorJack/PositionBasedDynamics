@@ -16,6 +16,7 @@ struct Configuration {
     vector<Mesh*> staticObjects;
     vector<Mesh*> simulatedObjects;
     vector<Vector3f> estimatePositions;
+    vector<float> inverseMasses;
     vector<Constraint*> constraints;
 
     ~Configuration() {
@@ -40,12 +41,14 @@ public:
     float pitch, yaw, roll;
 
     // Objects
-    Configuration* configuration;
+    Configuration* currentConfiguration;
 
 private:
     void setupConfigurationA();
     void setupConfigurationB();
     void setupConfigurationC();
+    void addPlaneToConfiguration(Configuration* configuration);
+    void setupEstimatePositionOffsets(Configuration* configuration);
 
     Configuration* configurationA;
     Configuration* configurationB;

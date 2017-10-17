@@ -45,7 +45,7 @@ struct Triangle {
 class Mesh {
 
 public:
-    Mesh(string filename, Vector3f colour);
+    Mesh(string filename, Vector3f colour, float inverseMass = 1.0f);
     ~Mesh();
     void reset();
     void applyImpulse(Vector3f force);
@@ -70,7 +70,7 @@ public:
 
     // Simulation fields
     vector<Vector3f> velocities;
-    vector<float> inverseMasses;
+    float inverseMass;
     int estimatePositionsOffset;
     bool isRigidBody = false;
     bool gravityAffected = false;
