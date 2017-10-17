@@ -106,7 +106,9 @@ public:
 
 // Constraint building
 void buildEdgeConstraints(Configuration* configuration, Mesh* mesh);
+void buildRigidBodyConstraints(Configuration* configuration, Mesh* mesh);
 void buildBendConstraints(Configuration* configuration, Mesh* mesh);
+void buildTwoWayCouplingConstraints(Configuration* configuration, Mesh* meshA);
 void buildFixedConstraint(Configuration* configuration, Mesh* mesh, int index, Vector3f target);
 void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, float distance, Mesh* secondMesh = nullptr);
 void buildBendConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);

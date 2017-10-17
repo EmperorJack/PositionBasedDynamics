@@ -53,6 +53,11 @@ void Scene::setConfiguration(int index) {
 
 void Scene::translateInteraction(Vector3f translate) {
 
+    // Translate the block in scene 1
+    if (currentConfiguration == configurationA) {
+        configurationA->simulatedObjects[0]->translate(translate);
+    }
+
     // Translate the attachment points in scene 3
     if (currentConfiguration == configurationC) {
         configurationC->simulatedObjects[0]->translate(translate);
@@ -88,10 +93,11 @@ void Scene::setupConfigurationA() {
 
     addPlaneToConfiguration(configurationA);
 
-    //Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-    //Mesh* testCube = new Mesh("../resources/models/cube.obj", meshColour);
-    //testCube->gravityAffected = true;
-    //testCube->isRigidBody = true;
+    Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
+    Mesh* block = new Mesh("../resources/models/sceneC/bar.obj", meshColour);
+    block->gravityAffected = true;
+    block->isRigidBody = true;
+    for (int i = 0; i < block->numVertices; i++) block->initialVertices[i] += Vector3f(0.0f, 5.0f, -8.0f);
 
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
     Mesh* flagPole = new Mesh("../resources/models/sceneA/flagPole.obj", flagPoleColour);
@@ -107,17 +113,13 @@ void Scene::setupConfigurationA() {
 
     configurationA->staticObjects.push_back(flagPole);
     configurationA->staticObjects.push_back(flagPole2);
-    //configurationA->simulatedObjects.push_back(testCube);
+    configurationA->simulatedObjects.push_back(block);
     configurationA->simulatedObjects.push_back(flag);
     configurationA->simulatedObjects.push_back(flagHigh);
 
-    //testCube->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
-    //testCube->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
-
     setupEstimatePositionOffsets(configurationA);
 
-    //buildFixedConstraint(configurationA, testCube, 3, testCube->initialVertices[3]));
-    //buildEdgeConstraints(configurationA, testCube);
+    buildRigidBodyConstraints(configurationA, block);
 
     for (int i = 0; i < 7; i++) buildFixedConstraint(configurationA, flag, i, flag->initialVertices[i]);
     buildEdgeConstraints(configurationA, flag);
@@ -153,7 +155,7 @@ void Scene::setupConfigurationB() {
 void Scene::setupConfigurationC() {
     configurationC = new Configuration();
 
-//    addPlaneToConfiguration(configurationC);
+    addPlaneToConfiguration(configurationC);
 
     Vector3f solidColour = { 1.0f, 1.0f, 1.0f };
     Mesh* attachPoints = new Mesh("../resources/models/sceneC/attachPoints.obj", solidColour, 0.0f);
@@ -164,7 +166,7 @@ void Scene::setupConfigurationC() {
     cloth->gravityAffected = true;
     cloth->windAffected = true;
 
-    Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour, 0.25f);
+    Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour, 0.5f);
     bar->isRigidBody = true;
     bar->gravityAffected = true;
     bar->windAffected = true;
@@ -178,10 +180,9 @@ void Scene::setupConfigurationC() {
     buildEdgeConstraints(configurationC, cloth);
     buildBendConstraints(configurationC, cloth);
 
-    buildEdgeConstraints(configurationC, bar);
-    buildBendConstraints(configurationC, bar);
+    buildRigidBodyConstraints(configurationC, bar);
 
-    buildTwoWayCouplingConstraints(configurationC);
+    buildTwoWayCouplingConstraints(configurationC, cloth);
 
     //Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
     //Mesh* simple = new Mesh("../resources/models/selfIntersectionTest.obj", planeColour);
@@ -215,22 +216,4 @@ void Scene::setupEstimatePositionOffsets(Configuration* configuration) {
     }
 
     configuration->estimatePositions.resize((size_t) totalNumVertices, Vector3f::Zero());
-}
-
-void Scene::buildTwoWayCouplingConstraints(Configuration* configuration) {
-
-    // Build a distance constraints between objects if they have vertices that overlap
-    for (Mesh* meshA : configuration->simulatedObjects) {
-        for (Mesh* meshB : configuration->simulatedObjects) {
-            if (meshA == meshB) continue;
-
-            for (int i = 0; i < meshA->numVertices; i++) {
-                for (int j = i; j < meshB->numVertices; j++) {
-                    if (meshA->vertices[i] == meshB->vertices[j]) {
-                        buildDistanceConstraint(configuration, meshA, i, j, 0.0f, meshB);
-                    }
-                }
-            }
-        }
-    }
 }

@@ -15,6 +15,14 @@ void buildEdgeConstraints(Configuration* configuration, Mesh* mesh) {
     }
 }
 
+void buildRigidBodyConstraints(Configuration* configuration, Mesh* mesh) {
+    for (int i = 0; i < mesh->numVertices; i++) {
+        for (int j = i + 1; j < mesh->numVertices; j++) {
+            buildDistanceConstraint(configuration, mesh, i, j, (mesh->vertices[i] - mesh->vertices[j]).norm());
+        }
+    }
+}
+
 void buildBendConstraints(Configuration* configuration, Mesh* mesh) {
     for (Edge edge : mesh->edges) {
         if (mesh->adjacentTriangles[edge].size() != 2) continue;
@@ -42,6 +50,22 @@ void buildBendConstraints(Configuration* configuration, Mesh* mesh) {
         float d = n1.dot(n2);
 
         buildBendConstraint(configuration, mesh, p1, p2, p3, p4, acosf(d));
+    }
+}
+
+void buildTwoWayCouplingConstraints(Configuration* configuration, Mesh* meshA) {
+
+    // Build a distance constraints between objects if they have vertices that overlap
+    for (Mesh* meshB : configuration->simulatedObjects) {
+        if (meshA == meshB) continue;
+
+        for (int i = 0; i < meshA->numVertices; i++) {
+            for (int j = 0; j < meshB->numVertices; j++) {
+                if (meshA->vertices[i] == meshB->vertices[j]) {
+                    buildDistanceConstraint(configuration, meshA, i, j, 0.0f, meshB);
+                }
+            }
+        }
     }
 }
 
@@ -127,8 +151,9 @@ void DistanceConstraint::project(Configuration* configuration, Params params) {
 
     for (int i = 0; i < cardinality; i++) {
         Vector3f displacement = displacements.row(i);
-        float k = 1.0f;
-        if (!mesh->isRigidBody) k = 1.0f - pow(1.0f - params.stretchFactor, 1.0f / params.solverIterations);
+        float k;
+        if (mesh->isRigidBody) k = 0.25f;
+        else k = 1.0f - pow(1.0f - params.stretchFactor, 1.0f / params.solverIterations);
         configuration->estimatePositions[indices[i]] += k * displacement;
     }
 }
@@ -183,8 +208,9 @@ void BendConstraint::project(Configuration* configuration, Params params) {
 
     for (int i = 0; i < cardinality; i++) {
         Vector3f displacement = displacements.row(i);
-        float k = 0.0f;
-        if (!mesh->isRigidBody) k = 1.0f - pow(1.0f - params.bendFactor, 1.0f / params.solverIterations);
+        float k;
+        if (mesh->isRigidBody) k = 0.25f;
+        else k = 1.0f - pow(1.0f - params.bendFactor, 1.0f / params.solverIterations);
         configuration->estimatePositions[indices[i]] += k * displacement;
     }
 }

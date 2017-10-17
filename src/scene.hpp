@@ -55,7 +55,6 @@ private:
     void setupConfigurationC();
     void addPlaneToConfiguration(Configuration* configuration);
     void setupEstimatePositionOffsets(Configuration* configuration);
-    void buildTwoWayCouplingConstraints(Configuration* configuration);
 
     Configuration* configurationA;
     Configuration* configurationB;
