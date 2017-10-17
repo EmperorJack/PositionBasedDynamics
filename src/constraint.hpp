@@ -108,7 +108,7 @@ public:
 void buildEdgeConstraints(Configuration* configuration, Mesh* mesh);
 void buildBendConstraints(Configuration* configuration, Mesh* mesh);
 void buildFixedConstraint(Configuration* configuration, Mesh* mesh, int index, Vector3f target);
-void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, float distance);
+void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, float distance, Mesh* secondMesh = nullptr);
 void buildBendConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, int indexC, int indexD, float angle);
 CollisionConstraint* buildStaticCollisionConstraint(Mesh* mesh, int index, Vector3f normal, Vector3f position);
 CollisionConstraint* buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, float height, int indexA, int indexB, int indexC);

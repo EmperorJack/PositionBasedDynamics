@@ -56,6 +56,12 @@ void Mesh::applyImpulse(Vector3f force) {
     }
 }
 
+void Mesh::translate(Vector3f translate) {
+    for (int i = 0; i < numVertices; i++) {
+        vertices[i] += translate;
+    }
+}
+
 void Mesh::updateBoundingBox() {
     float xMin = INFINITY;
     float xMax = -INFINITY;

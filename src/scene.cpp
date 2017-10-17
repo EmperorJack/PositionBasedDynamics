@@ -51,6 +51,14 @@ void Scene::setConfiguration(int index) {
     }
 }
 
+void Scene::translateInteraction(Vector3f translate) {
+
+    // Translate the attachment points in scene 3
+    if (currentConfiguration == configurationC) {
+        configurationC->simulatedObjects[0]->translate(translate);
+    }
+}
+
 void Scene::render(bool wireframe) {
     camera->setPerspective(45.0f, (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT, 0.1f, 100.0f);
     camera->lookAt(Vector3f(0, 0, 20), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
@@ -145,10 +153,10 @@ void Scene::setupConfigurationB() {
 void Scene::setupConfigurationC() {
     configurationC = new Configuration();
 
-    addPlaneToConfiguration(configurationC);
+//    addPlaneToConfiguration(configurationC);
 
     Vector3f solidColour = { 1.0f, 1.0f, 1.0f };
-    Mesh* attachPoints = new Mesh("../resources/models/sceneC/attachPoints.obj", solidColour);
+    Mesh* attachPoints = new Mesh("../resources/models/sceneC/attachPoints.obj", solidColour, 0.0f);
     attachPoints->isRigidBody = true;
 
     Vector3f clothColour = { 0.8f, 0.4f, 0.1f };
@@ -156,11 +164,12 @@ void Scene::setupConfigurationC() {
     cloth->gravityAffected = true;
     cloth->windAffected = true;
 
-    Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour);
+    Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour, 0.25f);
     bar->isRigidBody = true;
     bar->gravityAffected = true;
+    bar->windAffected = true;
 
-    configurationC->staticObjects.push_back(attachPoints);
+    configurationC->simulatedObjects.push_back(attachPoints);
     configurationC->simulatedObjects.push_back(cloth);
     configurationC->simulatedObjects.push_back(bar);
 
@@ -170,8 +179,9 @@ void Scene::setupConfigurationC() {
     buildBendConstraints(configurationC, cloth);
 
     buildEdgeConstraints(configurationC, bar);
-    buildEdgeConstraints(configurationC, bar);
     buildBendConstraints(configurationC, bar);
+
+    buildTwoWayCouplingConstraints(configurationC);
 
     //Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
     //Mesh* simple = new Mesh("../resources/models/selfIntersectionTest.obj", planeColour);
@@ -205,4 +215,22 @@ void Scene::setupEstimatePositionOffsets(Configuration* configuration) {
     }
 
     configuration->estimatePositions.resize((size_t) totalNumVertices, Vector3f::Zero());
+}
+
+void Scene::buildTwoWayCouplingConstraints(Configuration* configuration) {
+
+    // Build a distance constraints between objects if they have vertices that overlap
+    for (Mesh* meshA : configuration->simulatedObjects) {
+        for (Mesh* meshB : configuration->simulatedObjects) {
+            if (meshA == meshB) continue;
+
+            for (int i = 0; i < meshA->numVertices; i++) {
+                for (int j = i; j < meshB->numVertices; j++) {
+                    if (meshA->vertices[i] == meshB->vertices[j]) {
+                        buildDistanceConstraint(configuration, meshA, i, j, 0.0f, meshB);
+                    }
+                }
+            }
+        }
+    }
 }

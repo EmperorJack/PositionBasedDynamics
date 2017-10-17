@@ -12,9 +12,9 @@ uniform vec3 lightPosition;
 
 void main() {
     vec3 lightColor = vec3(1, 1, 1);
-	float lightIntensity = 50.0;
+	float lightIntensity = 60.0;
 	vec3 specularColor = vec3(1, 1, 1);
-	int specularExponent = 5;
+	int specularExponent = 8;
 
 	float distance = length(lightPosition - position_worldspace);
 

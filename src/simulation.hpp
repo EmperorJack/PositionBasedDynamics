@@ -28,8 +28,8 @@ public:
     int solverIterations = 4;
     float timeStep = 0.05f;
     float gravity = 0.981f;
-    float windSpeed = 2.5f;
-    float velocityDamping = 1.0f;
+    float windSpeed = 1.5f;
+    float velocityDamping = 0.999f;
     float stretchFactor = 0.999f;
     float bendFactor = 0.3f;
     bool wireframe = false;

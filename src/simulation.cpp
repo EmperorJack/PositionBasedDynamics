@@ -46,18 +46,21 @@ void Simulation::update() {
 void Simulation::simulate(Configuration *configuration) {
 
     // Apply external forces
-    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
+    for (Mesh* mesh : configuration->simulatedObjects) {
         if (mesh->gravityAffected) mesh->applyImpulse(timeStep * Vector3f(0, -gravity, 0));
         if (mesh->windAffected) mesh->applyImpulse(timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f)));
     }
 
     // Dampen velocities TODO
-    //for (int i = 0; i < mesh->numVertices; i++) {
-    //    mesh->velocities[i] *= velocityDamping;
-    //}
+    for (Mesh* mesh : configuration->simulatedObjects) {
+        #pragma omp parallel for
+        for (int i = 0; i < mesh->numVertices; i++) {
+            mesh->velocities[i] *= velocityDamping;
+        }
+    }
 
     // Initialise estimate positions
-    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
+    for (Mesh* mesh : configuration->simulatedObjects) {
         #pragma omp parallel for
         for (int i = 0; i < mesh->numVertices; i++) {
             configuration->estimatePositions[i + mesh->estimatePositionsOffset] = mesh->vertices[i] + timeStep * mesh->velocities[i];
@@ -69,7 +72,7 @@ void Simulation::simulate(Configuration *configuration) {
     configuration->collisionConstraints.clear();
 
     // Generate collision constraints
-    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
+    for (Mesh* mesh : configuration->simulatedObjects) {
         //#pragma omp parallel for // There is a thread-conflict when this is used
         for (int i = 0; i < mesh->numVertices; i++) {
             generateCollisionConstraints(configuration, mesh, i);
@@ -96,7 +99,7 @@ void Simulation::simulate(Configuration *configuration) {
     }
 
     // Update positions and velocities
-    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
+    for (Mesh* mesh : configuration->simulatedObjects) {
         #pragma omp parallel for
         for (int i = 0; i < mesh->numVertices; i++) {
             mesh->velocities[i] = (configuration->estimatePositions[mesh->estimatePositionsOffset + i] - mesh->vertices[i]) / timeStep;

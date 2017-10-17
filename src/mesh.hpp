@@ -49,6 +49,7 @@ public:
     ~Mesh();
     void reset();
     void applyImpulse(Vector3f force);
+    void translate(Vector3f translate);
     bool intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal, int vertexIndex, int &triangleIndex);
     void updateBoundingBox();
     void render(Camera* camera, Matrix4f transform);

@@ -54,10 +54,16 @@ void buildFixedConstraint(Configuration* configuration, Mesh* mesh, int index, V
     configuration->constraints.push_back(constraint);
 }
 
-void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, float distance) {
+void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int indexA, int indexB, float distance, Mesh* secondMesh) {
     Constraint* constraint = new DistanceConstraint(mesh, 2, distance);
     constraint->indices.push_back(indexA + mesh->estimatePositionsOffset);
-    constraint->indices.push_back(indexB + mesh->estimatePositionsOffset);
+
+    // If a second mesh is provided we are building a constraint between two objects
+    if (secondMesh != nullptr) {
+        constraint->indices.push_back(indexB + secondMesh->estimatePositionsOffset);
+    } else {
+        constraint->indices.push_back(indexB + mesh->estimatePositionsOffset);
+    }
 
     constraint->preCompute(configuration);
 
@@ -122,7 +128,7 @@ void DistanceConstraint::project(Configuration* configuration, Params params) {
     for (int i = 0; i < cardinality; i++) {
         Vector3f displacement = displacements.row(i);
         float k = 1.0f;
-        if (!mesh->isRigidBody) k -= pow(1.0f - params.stretchFactor, 1.0f / params.solverIterations);
+        if (!mesh->isRigidBody) k = 1.0f - pow(1.0f - params.stretchFactor, 1.0f / params.solverIterations);
         configuration->estimatePositions[indices[i]] += k * displacement;
     }
 }
@@ -148,24 +154,20 @@ void BendConstraint::project(Configuration* configuration, Params params) {
     Vector3f q2 = -(p3.cross(n2) + d * n1.cross(p3)) / (p2Xp3.norm()) - (p4.cross(n1) + d * n2.cross(p4)) / (p2Xp4.norm());
     Vector3f q1 = -q2 - q3 - q4;
 
+    float qSum = q1.squaredNorm() + q2.squaredNorm() + q3.squaredNorm() + q4.squaredNorm();
+
     // Compute coefficient matrix
     coefficients.resize(cardinality, cardinality);
     coefficients.setZero();
 
     float denominator = 0.0f;
     for (int i = 0; i < cardinality; i++) {
-        denominator += configuration->inverseMasses[indices[i]];
+        denominator += configuration->inverseMasses[indices[i]] * qSum;
     }
 
     for (int i = 0; i < cardinality; i++) {
         float wi = configuration->inverseMasses[indices[i]];
         coefficients.coeffRef(i, i) = 1.0f / (wi / denominator);
-    }
-
-    float qSum = q1.squaredNorm() + q2.squaredNorm() + q3.squaredNorm() + q4.squaredNorm();
-
-    for (int i = 0; i < cardinality; i++) {
-        coefficients.coeffRef(i, i) *= qSum;
     }
 
     // Prevent issue where d falls out of range -1 to 1
@@ -181,8 +183,8 @@ void BendConstraint::project(Configuration* configuration, Params params) {
 
     for (int i = 0; i < cardinality; i++) {
         Vector3f displacement = displacements.row(i);
-        float k = 1.0f;
-        if (!mesh->isRigidBody) k -= pow(1.0f - params.bendFactor, 1.0f / params.solverIterations);
+        float k = 0.0f;
+        if (!mesh->isRigidBody) k = 1.0f - pow(1.0f - params.bendFactor, 1.0f / params.solverIterations);
         configuration->estimatePositions[indices[i]] += k * displacement;
     }
 }

@@ -44,9 +44,14 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
-        if (key == ' ') {
-            simulation->reset();
-        }
+        if (key == GLFW_KEY_SPACE) simulation->reset();
+    }
+
+    if (action == GLFW_REPEAT) {
+        if (key == GLFW_KEY_LEFT) simulation->scene->translateInteraction(Vector3f(0.2f, 0.0f, 0.0f));
+        else if (key == GLFW_KEY_RIGHT) simulation->scene->translateInteraction(Vector3f(-0.2f, 0.0f, 0.0f));
+        else if (key == GLFW_KEY_UP) simulation->scene->translateInteraction(Vector3f(0.0f, 0.0f, 0.2f));
+        else if (key == GLFW_KEY_DOWN) simulation->scene->translateInteraction(Vector3f(0.0f, 0.0f, -0.2f));
     }
 }
 

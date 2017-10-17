@@ -37,6 +37,7 @@ public:
 
     void reset();
     void setConfiguration(int index);
+    void translateInteraction(Vector3f translate);
     void render(bool wireframe);
 
     // Camera
@@ -54,6 +55,7 @@ private:
     void setupConfigurationC();
     void addPlaneToConfiguration(Configuration* configuration);
     void setupEstimatePositionOffsets(Configuration* configuration);
+    void buildTwoWayCouplingConstraints(Configuration* configuration);
 
     Configuration* configurationA;
     Configuration* configurationB;
