@@ -6,8 +6,8 @@
 #define POSITIONBASEDDYNAMICS_SIMULATION_HPP
 
 #include <GL/glew.h>
-#include <camera.hpp>
 #include <mesh.hpp>
+#include <scene.hpp>
 
 class Simulation {
 
@@ -21,7 +21,6 @@ public:
     void reset();
 
     void update();
-    void render();
     void renderGUI();
 
     // Variables
@@ -34,8 +33,8 @@ public:
     float bendFactor = 0.3f;
     bool wireframe = false;
 
-    // Camera variables
-    float pitch, yaw, roll;
+    // Scene
+    Scene* scene;
 
 private:
 
@@ -43,13 +42,6 @@ private:
     void generateCollisionConstraints(Mesh* mesh, int index, vector<CollisionConstraint*> &constraints);
     bool planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal);
     void updateCollisionVelocities(CollisionConstraint* constraint);
-
-    // Camera
-    Camera* camera;
-
-    // Objects
-    vector<Mesh*> staticObjects;
-    vector<Mesh*> simulatedObjects;
 
     // Forces
     float windOscillation = 0.0f;
