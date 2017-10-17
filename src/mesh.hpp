@@ -13,12 +13,9 @@
 #include <GL/glew.h>
 #include <bounding_box.hpp>
 #include <camera.hpp>
-#include <constraint.hpp>
 
 using namespace std;
 using namespace Eigen;
-
-class Constraint;
 
 struct Vertex {
     int p;
@@ -74,8 +71,7 @@ public:
     // Simulation fields
     vector<Vector3f> velocities;
     vector<float> inverseMasses;
-    vector<Vector3f> estimatePositions;
-    vector<Constraint*> constraints;
+    int estimatePositionsOffset;
     bool isRigidBody = false;
     bool gravityAffected = false;
     bool windAffected = false;

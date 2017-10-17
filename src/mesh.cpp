@@ -30,10 +30,6 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
 }
 
 Mesh::~Mesh() {
-    for (Constraint* constraint : constraints) {
-        delete constraint;
-    }
-
     delete boundingBox;
 }
 
@@ -51,9 +47,7 @@ void Mesh::generateSurfaceNormals() {
 void Mesh::reset() {
     vertices = initialVertices;
 
-    estimatePositions.clear();
     velocities.clear();
-
     velocities.resize((size_t) numVertices, Vector3f::Zero());
 }
 

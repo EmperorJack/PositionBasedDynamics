@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 #include <mesh.hpp>
 #include <scene.hpp>
+#include <constraint.hpp>
 
 class Simulation {
 
@@ -38,8 +39,8 @@ public:
 
 private:
 
-    void simulate(Mesh* mesh);
-    void generateCollisionConstraints(Mesh* mesh, int index, vector<CollisionConstraint*> &constraints);
+    void simulate(Configuration *configuration);
+    void generateCollisionConstraints(Configuration *configuration, Mesh *mesh, int index, vector<CollisionConstraint *> &constraints);
     bool planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal);
     void updateCollisionVelocities(CollisionConstraint* constraint);
 

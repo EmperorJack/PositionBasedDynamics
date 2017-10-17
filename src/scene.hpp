@@ -7,15 +7,21 @@
 
 #include <GL/glew.h>
 #include <camera.hpp>
+#include <constraint.hpp>
 #include <mesh.hpp>
+
+class Constraint;
 
 struct Configuration {
     vector<Mesh*> staticObjects;
     vector<Mesh*> simulatedObjects;
+    vector<Vector3f> estimatePositions;
+    vector<Constraint*> constraints;
 
     ~Configuration() {
         for (Mesh* mesh : staticObjects) delete mesh;
         for (Mesh* mesh : simulatedObjects) delete mesh;
+        for (Constraint* constraint : constraints) delete constraint;
     }
 };
 

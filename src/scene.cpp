@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <main.hpp>
+#include <constraint.hpp>
 #include <scene.hpp>
 
 Scene::Scene() {
@@ -29,6 +30,7 @@ void Scene::reset() {
     for (Mesh* mesh : configuration->simulatedObjects) {
         mesh->reset();
     }
+    configuration->estimatePositions.clear();
 }
 
 void Scene::setConfiguration(int index) {
@@ -99,22 +101,22 @@ void Scene::setupConfigurationA() {
 //    buildEdgeConstraints(testCube);
 
     for (int i = 0; i < 7; i++) {
-        flag->constraints.push_back(buildFixedConstraint(flag, i, flag->initialVertices[i]));
+        configurationA->constraints.push_back(buildFixedConstraint(flag, i, flag->initialVertices[i]));
     }
-    buildEdgeConstraints(flag);
-    buildBendConstraints(flag);
+    //buildEdgeConstraints(configurationA, flag);
+    //buildBendConstraints(configurationA, flag);
 
     for (int i = 0; i < 14; i++) {
-        flagHigh->constraints.push_back(buildFixedConstraint(flagHigh, i, flagHigh->initialVertices[i]));
+        configurationA->constraints.push_back(buildFixedConstraint(flagHigh, i, flagHigh->initialVertices[i]));
     }
-    buildEdgeConstraints(flagHigh);
-    buildBendConstraints(flagHigh);
+    buildEdgeConstraints(configurationA, flagHigh);
+    buildBendConstraints(configurationA, flagHigh);
 
     configurationA->staticObjects.push_back(plane);
     configurationA->staticObjects.push_back(flagPole);
     configurationA->staticObjects.push_back(flagPole2);
 //    configurationA->simulatedObjects.push_back(testCube);
-    configurationA->simulatedObjects.push_back(flag);
+    //configurationA->simulatedObjects.push_back(flag);
     configurationA->simulatedObjects.push_back(flagHigh);
 
 //    testCube->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
@@ -136,8 +138,8 @@ void Scene::setupConfigurationB() {
     Mesh* restObject = new Mesh("../resources/models/sceneB/sphere.obj", resetObjectColour);
     restObject->isRigidBody = true;
 
-    buildEdgeConstraints(cloth);
-    buildBendConstraints(cloth);
+    buildEdgeConstraints(configurationB, cloth);
+    buildBendConstraints(configurationB, cloth);
 
     configurationB->staticObjects.push_back(plane);
     configurationB->simulatedObjects.push_back(cloth);
@@ -164,11 +166,11 @@ void Scene::setupConfigurationC() {
     bar->isRigidBody = true;
     bar->gravityAffected = true;
 
-    buildEdgeConstraints(cloth);
-    buildBendConstraints(cloth);
+    buildEdgeConstraints(configurationC, cloth);
+    buildBendConstraints(configurationC, cloth);
 
-    buildEdgeConstraints(bar);
-    buildBendConstraints(bar);
+    buildEdgeConstraints(configurationC, bar);
+    buildBendConstraints(configurationC, bar);
 
     configurationC->staticObjects.push_back(plane);
     configurationC->staticObjects.push_back(attachPoints);

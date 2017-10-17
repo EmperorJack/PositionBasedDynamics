@@ -6,16 +6,16 @@
 #include <main.hpp>
 #include <constraint.hpp>
 
-void buildEdgeConstraints(Mesh* mesh) {
+void buildEdgeConstraints(Configuration* configuration, Mesh* mesh) {
     for (Edge edge : mesh->edges) {
         int v0 = edge.v[0].p;
         int v1 = edge.v[1].p;
 
-        mesh->constraints.push_back(buildDistanceConstraint(mesh, v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm()));
+        configuration->constraints.push_back(buildDistanceConstraint(mesh, v0, v1, (mesh->vertices[v0] - mesh->vertices[v1]).norm()));
     }
 }
 
-void buildBendConstraints(Mesh* mesh) {
+void buildBendConstraints(Configuration* configuration, Mesh* mesh) {
     for (Edge edge : mesh->edges) {
         if (mesh->adjacentTriangles[edge].size() != 2) continue;
 
@@ -41,7 +41,7 @@ void buildBendConstraints(Mesh* mesh) {
         Vector3f n2 = mesh->vertices[p2].cross(mesh->vertices[p4]) / mesh->vertices[p2].cross(mesh->vertices[p4]).norm();
         float d = n1.dot(n2);
 
-        mesh->constraints.push_back(buildBendConstraint(mesh, p1, p2, p3, p4, acosf(d)));
+        configuration->constraints.push_back(buildBendConstraint(mesh, p1, p2, p3, p4, acosf(d)));
     }
 }
 
@@ -88,8 +88,8 @@ buildTriangleCollisionConstraint(Mesh *mesh, int vertexIndex, Vector3f normal, f
     return constraint;
 }
 
-void FixedConstraint::project(Params params) {
-    mesh->estimatePositions[indices[0]] = target;
+void FixedConstraint::project(Configuration* configuration, Params params) {
+    configuration->estimatePositions[indices[0]] = target;
 }
 
 void DistanceConstraint::preCompute() {
@@ -102,11 +102,11 @@ void DistanceConstraint::preCompute() {
     coefficients.coeffRef(1, 1) = 1.0f / (w2 / (w1 + w2));
 }
 
-void DistanceConstraint::project(Params params) {
+void DistanceConstraint::project(Configuration* configuration, Params params) {
     MatrixXf RHS = MatrixXf::Zero(cardinality, 3);
 
-    Vector3f p1 = mesh->estimatePositions[indices[0]];
-    Vector3f p2 = mesh->estimatePositions[indices[1]];
+    Vector3f p1 = configuration->estimatePositions[indices[0]];
+    Vector3f p2 = configuration->estimatePositions[indices[1]];
 
     float a = (p1 - p2).norm() - distance;
     Vector3f b = (p1 - p2) / ((p1 - p2).norm() + EPSILON);
@@ -117,21 +117,20 @@ void DistanceConstraint::project(Params params) {
     MatrixXf displacements = coefficients.llt().solve(RHS);
 
     for (int i = 0; i < cardinality; i++) {
-        int vertexIndex = indices[i];
         Vector3f displacement = displacements.row(i);
         float k = 1.0f;
         if (!mesh->isRigidBody) k -= pow(1.0f - params.stretchFactor, 1.0f / params.solverIterations);
-        mesh->estimatePositions[vertexIndex] += k * displacement;
+        configuration->estimatePositions[indices[i]] += k * displacement;
     }
 }
 
-void BendConstraint::project(Params params) {
+void BendConstraint::project(Configuration* configuration, Params params) {
     MatrixXf RHS = MatrixXf::Zero(cardinality, 3);
 
-    Vector3f p1 = mesh->estimatePositions[indices[0]];
-    Vector3f p2 = mesh->estimatePositions[indices[1]];
-    Vector3f p3 = mesh->estimatePositions[indices[2]];
-    Vector3f p4 = mesh->estimatePositions[indices[3]];
+    Vector3f p1 = configuration->estimatePositions[indices[0]];
+    Vector3f p2 = configuration->estimatePositions[indices[1]];
+    Vector3f p3 = configuration->estimatePositions[indices[2]];
+    Vector3f p4 = configuration->estimatePositions[indices[3]];
 
     Vector3f p2Xp3 = p2.cross(p3);
     Vector3f p2Xp4 = p2.cross(p4);
@@ -178,16 +177,15 @@ void BendConstraint::project(Params params) {
     MatrixXf displacements = coefficients.llt().solve(RHS);
 
     for (int i = 0; i < cardinality; i++) {
-        int vertexIndex = indices[i];
         Vector3f displacement = displacements.row(i);
         float k = 1.0f;
         if (!mesh->isRigidBody) k -= pow(1.0f - params.bendFactor, 1.0f / params.solverIterations);
-        mesh->estimatePositions[vertexIndex] += k * displacement;
+        configuration->estimatePositions[indices[i]] += k * displacement;
     }
 }
 
-void StaticCollisionConstraint::project(Params params) {
-    Vector3f p = mesh->estimatePositions[indices[0]];
+void StaticCollisionConstraint::project(Configuration* configuration, Params params) {
+    Vector3f p = configuration->estimatePositions[indices[0]];
 
     Vector3f pointToPosition = p - position;
     pointToPosition.normalize();
@@ -200,14 +198,14 @@ void StaticCollisionConstraint::project(Params params) {
 
     Vector3f displacement = a * b;
 
-    mesh->estimatePositions[indices[0]] += displacement;
+    configuration->estimatePositions[indices[0]] += displacement;
 }
 
-void TriangleCollisionConstraint::project(Params params) {
-    Vector3f q = mesh->estimatePositions[indices[0]];
-    Vector3f p1 = mesh->estimatePositions[indices[1]];
-    Vector3f p2 = mesh->estimatePositions[indices[2]];
-    Vector3f p3 = mesh->estimatePositions[indices[3]];
+void TriangleCollisionConstraint::project(Configuration* configuration, Params params) {
+    Vector3f q = configuration->estimatePositions[indices[0]];
+    Vector3f p1 = configuration->estimatePositions[indices[1]];
+    Vector3f p2 = configuration->estimatePositions[indices[2]];
+    Vector3f p3 = configuration->estimatePositions[indices[3]];
 
     // Check if constraint is already satisfied
     Vector3f n = (p2 - p1).cross(p3 - p1);
@@ -225,5 +223,5 @@ void TriangleCollisionConstraint::project(Params params) {
 
     Vector3f displacement = a * b;
 
-    mesh->estimatePositions[indices[0]] -= displacement;
+    configuration->estimatePositions[indices[0]] -= displacement;
 }
