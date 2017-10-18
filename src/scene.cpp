@@ -189,18 +189,22 @@ void Scene::setupConfigurationD() {
     Mesh* cube = new Mesh("../resources/models/sceneD/cube.obj", colourA);
     cube->isRigidBody = true;
     cube->gravityAffected = true;
+    cube->windAffected = true;
 
     Mesh* pyramid = new Mesh("../resources/models/sceneD/pyramid.obj", colourB);
     pyramid->isRigidBody = true;
     pyramid->gravityAffected = true;
+    pyramid->windAffected = true;
 
     Mesh* cylinder = new Mesh("../resources/models/sceneD/cylinder.obj", colourC);
     cylinder->isRigidBody = true;
     cylinder->gravityAffected = true;
+    cylinder->windAffected = true;
 
     Mesh* sphere = new Mesh("../resources/models/sceneD/sphere.obj", colourD);
     sphere->isRigidBody = true;
     sphere->gravityAffected = true;
+    sphere->windAffected = true;
 
     configurationD->simulatedObjects.push_back(cube);
     configurationD->simulatedObjects.push_back(pyramid);
