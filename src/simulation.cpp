@@ -47,8 +47,8 @@ void Simulation::simulate(Configuration *configuration) {
 
     // Apply external forces
     for (Mesh* mesh : configuration->simulatedObjects) {
-        if (mesh->gravityAffected) mesh->applyImpulse(timeStep * Vector3f(0, -gravity, 0));
-        if (mesh->windAffected) mesh->applyImpulse(timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f)));
+        if (mesh->gravityAffected) mesh->applyImpulse(2.0f * timeStep * Vector3f(0, -gravity, 0));
+        if (mesh->windAffected) mesh->applyImpulse(2.0f * timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f)));
     }
 
     // Dampen velocities TODO

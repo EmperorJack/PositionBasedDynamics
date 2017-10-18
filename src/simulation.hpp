@@ -26,7 +26,7 @@ public:
 
     // Variables
     int solverIterations = 4;
-    float timeStep = 0.05f;
+    float timeStep = 0.03f;
     float gravity = 0.981f;
     float windSpeed = 1.5f;
     float velocityDamping = 0.999f;
