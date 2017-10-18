@@ -53,12 +53,14 @@ private:
     void setupConfigurationA();
     void setupConfigurationB();
     void setupConfigurationC();
+    void setupConfigurationD();
     void addPlaneToConfiguration(Configuration* configuration);
     void setupEstimatePositionOffsets(Configuration* configuration);
 
     Configuration* configurationA;
     Configuration* configurationB;
     Configuration* configurationC;
+    Configuration* configurationD;
 
 };
 

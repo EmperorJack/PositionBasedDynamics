@@ -208,6 +208,7 @@ void Simulation::renderGUI() {
     if (ImGui::Button("Show Scene A")) scene->setConfiguration(0);
     if (ImGui::Button("Show Scene B")) scene->setConfiguration(1);
     if (ImGui::Button("Show Scene C")) scene->setConfiguration(2);
+    if (ImGui::Button("Show Scene D")) scene->setConfiguration(3);
 
     ImGui::Text("Solver Iterations");
     ImGui::SliderInt("##solverIterations", &solverIterations, 1, 50, "%.0f");

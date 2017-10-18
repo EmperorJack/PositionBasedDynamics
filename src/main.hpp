@@ -3,7 +3,7 @@
 
 // Screen settings
 #define FULL_SCREEN false
-#define BORDERLESS false
+#define BORDERLESS true
 
 #if FULL_SCREEN || BORDERLESS
 #define SCREEN_WIDTH 1920

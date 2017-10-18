@@ -16,6 +16,7 @@ Scene::Scene() {
     setupConfigurationA();
     setupConfigurationB();
     setupConfigurationC();
+    setupConfigurationD();
     currentConfiguration = configurationA;
 }
 
@@ -24,6 +25,7 @@ Scene::~Scene() {
     delete configurationA;
     delete configurationB;
     delete configurationC;
+    delete configurationD;
 }
 
 void Scene::reset() {
@@ -45,6 +47,9 @@ void Scene::setConfiguration(int index) {
         case 2:
             currentConfiguration = configurationC;
             break;
+        case 3:
+            currentConfiguration = configurationD;
+            break;
         default:
             currentConfiguration = configurationA;
             break;
@@ -52,11 +57,6 @@ void Scene::setConfiguration(int index) {
 }
 
 void Scene::translateInteraction(Vector3f translate) {
-
-    // Translate the block in scene 1
-    if (currentConfiguration == configurationA) {
-        configurationA->simulatedObjects[0]->translate(translate);
-    }
 
     // Translate the attachment points in scene 3
     if (currentConfiguration == configurationC) {
@@ -93,12 +93,6 @@ void Scene::setupConfigurationA() {
 
     addPlaneToConfiguration(configurationA);
 
-    Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-    Mesh* block = new Mesh("../resources/models/sceneC/bar.obj", meshColour);
-    block->gravityAffected = true;
-    block->isRigidBody = true;
-    for (int i = 0; i < block->numVertices; i++) block->initialVertices[i] += Vector3f(0.0f, 5.0f, -8.0f);
-
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
     Mesh* flagPole = new Mesh("../resources/models/sceneA/flagPole.obj", flagPoleColour);
     Mesh* flagPole2 = new Mesh("../resources/models/sceneA/flagPole2.obj", flagPoleColour);
@@ -113,13 +107,10 @@ void Scene::setupConfigurationA() {
 
     configurationA->staticObjects.push_back(flagPole);
     configurationA->staticObjects.push_back(flagPole2);
-    configurationA->simulatedObjects.push_back(block);
     configurationA->simulatedObjects.push_back(flag);
     configurationA->simulatedObjects.push_back(flagHigh);
 
     setupEstimatePositionOffsets(configurationA);
-
-    buildRigidBodyConstraints(configurationA, block);
 
     for (int i = 0; i < 7; i++) buildFixedConstraint(configurationA, flag, i, flag->initialVertices[i]);
     buildEdgeConstraints(configurationA, flag);
@@ -183,18 +174,45 @@ void Scene::setupConfigurationC() {
     buildRigidBodyConstraints(configurationC, bar);
 
     buildTwoWayCouplingConstraints(configurationC, cloth);
+}
 
-    //Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
-    //Mesh* simple = new Mesh("../resources/models/selfIntersectionTest.obj", planeColour);
-    //simple->gravityAffected = true;
+void Scene::setupConfigurationD() {
+    configurationD = new Configuration();
 
-    //simple->constraints.push_back(buildFixedConstraint(simple, 0, simple->initialVertices[0]));
-    //simple->constraints.push_back(buildFixedConstraint(simple, 1, simple->initialVertices[1]));
-    //simple->constraints.push_back(buildFixedConstraint(simple, 2, simple->initialVertices[2]));
-    //simple->constraints.push_back(buildFixedConstraint(simple, 3, simple->initialVertices[3]));
-    //buildEdgeConstraints(simple);
+    addPlaneToConfiguration(configurationD);
 
-    //configurationC->simulatedObjects.push_back(simple);
+    Vector3f colourA = { 1.0f, 1.0f, 0.0f };
+    Vector3f colourB = { 1.0f, 0.0f, 1.0f };
+    Vector3f colourC = { 0.0f, 1.0f, 1.0f };
+    Vector3f colourD = { 0.4f, 0.4f, 0.4f };
+
+    Mesh* cube = new Mesh("../resources/models/sceneD/cube.obj", colourA);
+    cube->isRigidBody = true;
+    cube->gravityAffected = true;
+
+    Mesh* pyramid = new Mesh("../resources/models/sceneD/pyramid.obj", colourB);
+    pyramid->isRigidBody = true;
+    pyramid->gravityAffected = true;
+
+    Mesh* cylinder = new Mesh("../resources/models/sceneD/cylinder.obj", colourC);
+    cylinder->isRigidBody = true;
+    cylinder->gravityAffected = true;
+
+    Mesh* sphere = new Mesh("../resources/models/sceneD/sphere.obj", colourD);
+    sphere->isRigidBody = true;
+    sphere->gravityAffected = true;
+
+    configurationD->simulatedObjects.push_back(cube);
+    configurationD->simulatedObjects.push_back(pyramid);
+    configurationD->simulatedObjects.push_back(cylinder);
+    configurationD->simulatedObjects.push_back(sphere);
+
+    setupEstimatePositionOffsets(configurationD);
+
+    buildRigidBodyConstraints(configurationD, cube);
+    buildRigidBodyConstraints(configurationD, pyramid);
+    buildRigidBodyConstraints(configurationD, cylinder);
+    buildRigidBodyConstraints(configurationD, sphere);
 }
 
 void Scene::addPlaneToConfiguration(Configuration* configuration) {
