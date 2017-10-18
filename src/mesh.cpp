@@ -8,7 +8,7 @@
 #include <shaderLoader.hpp>
 #include <mesh.hpp>
 
-Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
+Mesh::Mesh(string filename, Vector3f colour, float inverseMass) : colour(colour), inverseMass(inverseMass) {
     parseObjFile(filename);
 
     initialVertices = vertices;
@@ -22,7 +22,6 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
 
     // Setup simulation
     reset();
-    inverseMasses.resize((size_t) numVertices, 1.0f);
 
     // Setup bounding box
     boundingBox = new BoundingBox();
@@ -30,10 +29,6 @@ Mesh::Mesh(string filename, Vector3f colour) : colour(colour) {
 }
 
 Mesh::~Mesh() {
-    for (Constraint* constraint : constraints) {
-        delete constraint;
-    }
-
     delete boundingBox;
 }
 
@@ -51,15 +46,19 @@ void Mesh::generateSurfaceNormals() {
 void Mesh::reset() {
     vertices = initialVertices;
 
-    estimatePositions.clear();
     velocities.clear();
-
     velocities.resize((size_t) numVertices, Vector3f::Zero());
 }
 
 void Mesh::applyImpulse(Vector3f force) {
     for (int i = 0; i < numVertices; i++) {
         velocities[i] += force;
+    }
+}
+
+void Mesh::translate(Vector3f translate) {
+    for (int i = 0; i < numVertices; i++) {
+        vertices[i] += translate;
     }
 }
 

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <main.hpp>
+#include <constraint.hpp>
 #include <scene.hpp>
 
 Scene::Scene() {
@@ -15,7 +16,7 @@ Scene::Scene() {
     setupConfigurationA();
     setupConfigurationB();
     setupConfigurationC();
-    configuration = configurationA;
+    currentConfiguration = configurationA;
 }
 
 Scene::~Scene() {
@@ -26,24 +27,40 @@ Scene::~Scene() {
 }
 
 void Scene::reset() {
-    for (Mesh* mesh : configuration->simulatedObjects) {
+    for (Mesh* mesh : currentConfiguration->simulatedObjects) {
         mesh->reset();
     }
+
+    currentConfiguration->estimatePositions.resize(currentConfiguration->estimatePositions.size(), Vector3f::Zero());
 }
 
 void Scene::setConfiguration(int index) {
     switch (index) {
         case 0:
-            configuration = configurationA;
+            currentConfiguration = configurationA;
             break;
         case 1:
-            configuration = configurationB;
+            currentConfiguration = configurationB;
             break;
         case 2:
-            configuration = configurationC;
+            currentConfiguration = configurationC;
             break;
         default:
+            currentConfiguration = configurationA;
             break;
+    }
+}
+
+void Scene::translateInteraction(Vector3f translate) {
+
+    // Translate the block in scene 1
+    if (currentConfiguration == configurationA) {
+        configurationA->simulatedObjects[0]->translate(translate);
+    }
+
+    // Translate the attachment points in scene 3
+    if (currentConfiguration == configurationC) {
+        configurationC->simulatedObjects[0]->translate(translate);
     }
 }
 
@@ -62,11 +79,11 @@ void Scene::render(bool wireframe) {
     if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    for (Mesh* mesh : configuration->staticObjects) {
+    for (Mesh* mesh : currentConfiguration->staticObjects) {
         mesh->render(camera, modelMatrix);
     }
 
-    for (Mesh* mesh : configuration->simulatedObjects) {
+    for (Mesh* mesh : currentConfiguration->simulatedObjects) {
         mesh->render(camera, modelMatrix);
     }
 }
@@ -74,14 +91,13 @@ void Scene::render(bool wireframe) {
 void Scene::setupConfigurationA() {
     configurationA = new Configuration();
 
-//    Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
-//    Mesh* testCube = new Mesh("../resources/models/cube.obj", meshColour);
-//    testCube->gravityAffected = true;
-//    testCube->isRigidBody = true;
+    addPlaneToConfiguration(configurationA);
 
-    Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
-    Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
-    plane->isRigidBody = true;
+    Vector3f meshColour = { 0.15f, 0.45f, 0.8f };
+    Mesh* block = new Mesh("../resources/models/sceneC/bar.obj", meshColour);
+    block->gravityAffected = true;
+    block->isRigidBody = true;
+    for (int i = 0; i < block->numVertices; i++) block->initialVertices[i] += Vector3f(0.0f, 5.0f, -8.0f);
 
     Vector3f flagPoleColour = { 0.337f, 0.184f, 0.054f };
     Mesh* flagPole = new Mesh("../resources/models/sceneA/flagPole.obj", flagPoleColour);
@@ -95,38 +111,29 @@ void Scene::setupConfigurationA() {
     flagHigh->gravityAffected = true;
     flagHigh->windAffected = true;
 
-//    testCube->constraints.push_back(buildFixedConstraint(testCube, 3, testCube->initialVertices[3]));
-//    buildEdgeConstraints(testCube);
-
-    for (int i = 0; i < 7; i++) {
-        flag->constraints.push_back(buildFixedConstraint(flag, i, flag->initialVertices[i]));
-    }
-    buildEdgeConstraints(flag);
-    buildBendConstraints(flag);
-
-    for (int i = 0; i < 14; i++) {
-        flagHigh->constraints.push_back(buildFixedConstraint(flagHigh, i, flagHigh->initialVertices[i]));
-    }
-    buildEdgeConstraints(flagHigh);
-    buildBendConstraints(flagHigh);
-
-    configurationA->staticObjects.push_back(plane);
     configurationA->staticObjects.push_back(flagPole);
     configurationA->staticObjects.push_back(flagPole2);
-//    configurationA->simulatedObjects.push_back(testCube);
+    configurationA->simulatedObjects.push_back(block);
     configurationA->simulatedObjects.push_back(flag);
     configurationA->simulatedObjects.push_back(flagHigh);
 
-//    testCube->applyImpulse(Vector3f(1.0f, 2.5f, -0.5f));
-//    testCube->vertices[0] += Vector3f(1.50f, 0.0f, 0.0f);
+    setupEstimatePositionOffsets(configurationA);
+
+    buildRigidBodyConstraints(configurationA, block);
+
+    for (int i = 0; i < 7; i++) buildFixedConstraint(configurationA, flag, i, flag->initialVertices[i]);
+    buildEdgeConstraints(configurationA, flag);
+    buildBendConstraints(configurationA, flag);
+
+    for (int i = 0; i < 14; i++) buildFixedConstraint(configurationA, flagHigh, i, flagHigh->initialVertices[i]);
+    buildEdgeConstraints(configurationA, flagHigh);
+    buildBendConstraints(configurationA, flagHigh);
 }
 
 void Scene::setupConfigurationB() {
     configurationB = new Configuration();
 
-    Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
-    Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
-    plane->isRigidBody = true;
+    addPlaneToConfiguration(configurationB);
 
     Vector3f clothColour = { 0.0f, 0.6f, 0.0f };
     Mesh* cloth = new Mesh("../resources/models/sceneB/cloth.obj", clothColour);
@@ -136,23 +143,22 @@ void Scene::setupConfigurationB() {
     Mesh* restObject = new Mesh("../resources/models/sceneB/sphere.obj", resetObjectColour);
     restObject->isRigidBody = true;
 
-    buildEdgeConstraints(cloth);
-    buildBendConstraints(cloth);
-
-    configurationB->staticObjects.push_back(plane);
     configurationB->simulatedObjects.push_back(cloth);
     configurationB->staticObjects.push_back(restObject);
+
+    setupEstimatePositionOffsets(configurationB);
+
+    buildEdgeConstraints(configurationB, cloth);
+    buildBendConstraints(configurationB, cloth);
 }
 
 void Scene::setupConfigurationC() {
     configurationC = new Configuration();
 
-    Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
-    Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
-    plane->isRigidBody = true;
+    addPlaneToConfiguration(configurationC);
 
     Vector3f solidColour = { 1.0f, 1.0f, 1.0f };
-    Mesh* attachPoints = new Mesh("../resources/models/sceneC/attachPoints.obj", planeColour);
+    Mesh* attachPoints = new Mesh("../resources/models/sceneC/attachPoints.obj", solidColour, 0.0f);
     attachPoints->isRigidBody = true;
 
     Vector3f clothColour = { 0.8f, 0.4f, 0.1f };
@@ -160,30 +166,54 @@ void Scene::setupConfigurationC() {
     cloth->gravityAffected = true;
     cloth->windAffected = true;
 
-    Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour);
+    Mesh* bar = new Mesh("../resources/models/sceneC/bar.obj", solidColour, 0.5f);
     bar->isRigidBody = true;
     bar->gravityAffected = true;
+    bar->windAffected = true;
 
-    buildEdgeConstraints(cloth);
-    buildBendConstraints(cloth);
-
-    buildEdgeConstraints(bar);
-    buildBendConstraints(bar);
-
-    configurationC->staticObjects.push_back(plane);
-    configurationC->staticObjects.push_back(attachPoints);
+    configurationC->simulatedObjects.push_back(attachPoints);
     configurationC->simulatedObjects.push_back(cloth);
     configurationC->simulatedObjects.push_back(bar);
 
-//    Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
-//    Mesh* simple = new Mesh("../resources/models/selfIntersectionTest.obj", planeColour);
-//    simple->gravityAffected = true;
+    setupEstimatePositionOffsets(configurationC);
 
-//    simple->constraints.push_back(buildFixedConstraint(simple, 0, simple->initialVertices[0]));
-//    simple->constraints.push_back(buildFixedConstraint(simple, 1, simple->initialVertices[1]));
-//    simple->constraints.push_back(buildFixedConstraint(simple, 2, simple->initialVertices[2]));
-//    simple->constraints.push_back(buildFixedConstraint(simple, 3, simple->initialVertices[3]));
-//    buildEdgeConstraints(simple);
+    buildEdgeConstraints(configurationC, cloth);
+    buildBendConstraints(configurationC, cloth);
 
-//    configurationC->simulatedObjects.push_back(simple);
+    buildRigidBodyConstraints(configurationC, bar);
+
+    buildTwoWayCouplingConstraints(configurationC, cloth);
+
+    //Mesh* simple = new Mesh("../resources/models/simple.obj", planeColour);
+    //Mesh* simple = new Mesh("../resources/models/selfIntersectionTest.obj", planeColour);
+    //simple->gravityAffected = true;
+
+    //simple->constraints.push_back(buildFixedConstraint(simple, 0, simple->initialVertices[0]));
+    //simple->constraints.push_back(buildFixedConstraint(simple, 1, simple->initialVertices[1]));
+    //simple->constraints.push_back(buildFixedConstraint(simple, 2, simple->initialVertices[2]));
+    //simple->constraints.push_back(buildFixedConstraint(simple, 3, simple->initialVertices[3]));
+    //buildEdgeConstraints(simple);
+
+    //configurationC->simulatedObjects.push_back(simple);
+}
+
+void Scene::addPlaneToConfiguration(Configuration* configuration) {
+    Vector3f planeColour = { 1.0f, 1.0f, 1.0f };
+    Mesh* plane = new Mesh("../resources/models/plane.obj", planeColour);
+    plane->isRigidBody = true;
+
+    configuration->staticObjects.push_back(plane);
+}
+
+void Scene::setupEstimatePositionOffsets(Configuration* configuration) {
+    int totalNumVertices = 0;
+
+    for (Mesh* mesh : configuration->simulatedObjects) {
+        mesh->estimatePositionsOffset = totalNumVertices;
+        totalNumVertices += mesh->numVertices;
+
+        for (int i = 0; i < mesh->numVertices; i++) configuration->inverseMasses.push_back(mesh->inverseMass);
+    }
+
+    configuration->estimatePositions.resize((size_t) totalNumVertices, Vector3f::Zero());
 }

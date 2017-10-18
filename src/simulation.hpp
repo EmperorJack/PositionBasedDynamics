@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 #include <mesh.hpp>
 #include <scene.hpp>
+#include <constraint.hpp>
 
 class Simulation {
 
@@ -25,10 +26,10 @@ public:
 
     // Variables
     int solverIterations = 4;
-    float timeStep = 0.05f;
+    float timeStep = 0.03f;
     float gravity = 0.981f;
-    float windSpeed = 2.5f;
-    float velocityDamping = 1.0f;
+    float windSpeed = 1.5f;
+    float velocityDamping = 0.999f;
     float stretchFactor = 0.999f;
     float bendFactor = 0.3f;
     bool wireframe = false;
@@ -38,8 +39,8 @@ public:
 
 private:
 
-    void simulate(Mesh* mesh);
-    void generateCollisionConstraints(Mesh* mesh, int index, vector<CollisionConstraint*> &constraints);
+    void simulate(Configuration *configuration);
+    void generateCollisionConstraints(Configuration *configuration, Mesh *mesh, int index);
     bool planeIntersection(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal);
     void updateCollisionVelocities(CollisionConstraint* constraint);
 

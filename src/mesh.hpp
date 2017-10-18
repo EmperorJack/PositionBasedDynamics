@@ -13,12 +13,9 @@
 #include <GL/glew.h>
 #include <bounding_box.hpp>
 #include <camera.hpp>
-#include <constraint.hpp>
 
 using namespace std;
 using namespace Eigen;
-
-class Constraint;
 
 struct Vertex {
     int p;
@@ -48,10 +45,11 @@ struct Triangle {
 class Mesh {
 
 public:
-    Mesh(string filename, Vector3f colour);
+    Mesh(string filename, Vector3f colour, float inverseMass = 1.0f);
     ~Mesh();
     void reset();
     void applyImpulse(Vector3f force);
+    void translate(Vector3f translate);
     bool intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector3f &normal, int vertexIndex, int &triangleIndex);
     void updateBoundingBox();
     void render(Camera* camera, Matrix4f transform);
@@ -73,9 +71,8 @@ public:
 
     // Simulation fields
     vector<Vector3f> velocities;
-    vector<float> inverseMasses;
-    vector<Vector3f> estimatePositions;
-    vector<Constraint*> constraints;
+    float inverseMass;
+    int estimatePositionsOffset;
     bool isRigidBody = false;
     bool gravityAffected = false;
     bool windAffected = false;
