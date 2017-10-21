@@ -7,6 +7,8 @@
 #include <constraint.hpp>
 
 void buildEdgeConstraints(Configuration* configuration, Mesh* mesh) {
+
+    // Build a distance constraint along each edge
     for (Edge edge : mesh->edges) {
         int v0 = edge.v[0].p;
         int v1 = edge.v[1].p;
@@ -16,6 +18,8 @@ void buildEdgeConstraints(Configuration* configuration, Mesh* mesh) {
 }
 
 void buildRigidBodyConstraints(Configuration* configuration, Mesh* mesh) {
+
+    // Build a distance constraint between each vertex
     for (int i = 0; i < mesh->numVertices; i++) {
         for (int j = i + 1; j < mesh->numVertices; j++) {
             buildDistanceConstraint(configuration, mesh, i, j, (mesh->vertices[i] - mesh->vertices[j]).norm());
@@ -24,7 +28,11 @@ void buildRigidBodyConstraints(Configuration* configuration, Mesh* mesh) {
 }
 
 void buildBendConstraints(Configuration* configuration, Mesh* mesh) {
+
+    // Build a bend constraint between each pair of triangles that share an edge
     for (Edge edge : mesh->edges) {
+
+        // Skip edges with only one adjacent triangle
         if (mesh->adjacentTriangles[edge].size() != 2) continue;
 
         Triangle t1 = mesh->adjacentTriangles[edge][0];
@@ -33,18 +41,21 @@ void buildBendConstraints(Configuration* configuration, Mesh* mesh) {
         int p1 = edge.v[0].p; // Shared vertex 1
         int p2 = edge.v[1].p; // Shared vertex 2
 
+        // Determine vertex 3
         int p3;
         for (Vertex v : t1.v) {
             int p = v.p;
             if (p1 != p && p2 != p) p3 = p;
         }
 
+        // Determine vertex 4
         int p4;
         for (Vertex v : t2.v) {
             int p = v.p;
             if (p1 != p && p2 != p) p4 = p;
         }
 
+        // Compute the initial dot product between the two triangles
         Vector3f n1 = mesh->vertices[p2].cross(mesh->vertices[p3]) / mesh->vertices[p2].cross(mesh->vertices[p3]).norm();
         Vector3f n2 = mesh->vertices[p2].cross(mesh->vertices[p4]) / mesh->vertices[p2].cross(mesh->vertices[p4]).norm();
         float d = n1.dot(n2);
@@ -82,7 +93,7 @@ void buildDistanceConstraint(Configuration* configuration, Mesh* mesh, int index
     Constraint* constraint = new DistanceConstraint(mesh, 2, distance);
     constraint->indices.push_back(indexA + mesh->estimatePositionsOffset);
 
-    // If a second mesh is provided we are building a constraint between two objects
+    // If a second mesh is provided we are building a constraint between two dynamic objects
     if (secondMesh != nullptr) {
         constraint->indices.push_back(indexB + secondMesh->estimatePositionsOffset);
     } else {

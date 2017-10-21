@@ -102,6 +102,7 @@ bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector
     int closestIndex = 0;
     Vector2f uv;
 
+    // Check each triangle to try and find an intersection
     for (int triangleIndex = 0; triangleIndex < numFaces; triangleIndex++) {
         float tTri = INFINITY;
         float u, v;
@@ -117,11 +118,7 @@ bool Mesh::intersect(Vector3f rayOrigin, Vector3f rayDirection, float &t, Vector
     if (hit) {
         triHitIndex = closestIndex;
 
-        // Compute a smooth interpolated normal
-//        Vector3f n0 = normals[triangles[closestIndex].v[0].n];
-//        Vector3f n1 = normals[triangles[closestIndex].v[1].n];
-//        Vector3f n2 = normals[triangles[closestIndex].v[2].n];
-//        normal = (((1.0f - uv[0] - uv[1]) * n0) + (uv[0] * n1) + (uv[1] * n2));
+        // Compute the normal at the intersected triangle
         Vector3f v1 = vertices[triangles[closestIndex].v[1].p] - vertices[triangles[closestIndex].v[0].p];
         Vector3f v2 = vertices[triangles[closestIndex].v[2].p] - vertices[triangles[closestIndex].v[0].p];
         normal = v1.cross(v2);
@@ -163,7 +160,7 @@ bool Mesh::rayTriangleIntersect(Vector3f rayOrigin, Vector3f rayDirection, float
 
     t = v0v2.dot(qvec) * invDet;
 
-    return true;//#t >= 0.0f;
+    return true;
 }
 
 void Mesh::render(Camera* camera, Matrix4f transform) {

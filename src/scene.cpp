@@ -65,9 +65,12 @@ void Scene::translateInteraction(Vector3f translate) {
 }
 
 void Scene::render(bool wireframe) {
+
+    // Setup camera
     camera->setPerspective(45.0f, (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT, 0.1f, 100.0f);
     camera->lookAt(Vector3f(0, 0, 20), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
 
+    // Rotate the model matrix based on the camera rotation
     AngleAxisf pitchAngle(pitch, Vector3f::UnitX());
     AngleAxisf yawAngle(yaw, Vector3f::UnitY());
     AngleAxisf rollAngle(roll, Vector3f::UnitZ());
@@ -76,9 +79,11 @@ void Scene::render(bool wireframe) {
     r.block(0, 0, 3, 3) = q.toRotationMatrix();
     Matrix4f modelMatrix = Matrix4f::Identity() * r;
 
+    // Set draw mode
     if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+    // Render configuration objects
     for (Mesh* mesh : currentConfiguration->staticObjects) {
         mesh->render(camera, modelMatrix);
     }
@@ -230,6 +235,7 @@ void Scene::addPlaneToConfiguration(Configuration* configuration) {
 void Scene::setupEstimatePositionOffsets(Configuration* configuration) {
     int totalNumVertices = 0;
 
+    // Compute the index offset for each object in the shared estimate positions list
     for (Mesh* mesh : configuration->simulatedObjects) {
         mesh->estimatePositionsOffset = totalNumVertices;
         totalNumVertices += mesh->numVertices;

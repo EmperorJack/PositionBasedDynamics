@@ -46,10 +46,11 @@ public:
     float yaw = 0.0f;
     float roll = 0.0f;
 
-    // Objects
     Configuration* currentConfiguration;
 
 private:
+
+    // Scene configuration setup
     void setupConfigurationA();
     void setupConfigurationB();
     void setupConfigurationC();

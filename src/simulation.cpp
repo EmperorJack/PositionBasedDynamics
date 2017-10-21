@@ -30,10 +30,10 @@ void Simulation::reset() {
 }
 void Simulation::update() {
 
-    // Update bounding boxes
-    for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
-        //mesh->updateBoundingBox();
-    }
+    // Update bounding boxes TODO for multi-dynamic object collision
+    //for (Mesh* mesh : scene->currentConfiguration->simulatedObjects) {
+    //    mesh->updateBoundingBox();
+    //}
 
     simulate(scene->currentConfiguration);
 
@@ -51,7 +51,7 @@ void Simulation::simulate(Configuration *configuration) {
         if (mesh->windAffected) mesh->applyImpulse(2.0f * timeStep * Vector3f(0, 0, -windSpeed + (sinf(windOscillation) * windSpeed / 2.0f)));
     }
 
-    // Dampen velocities TODO
+    // Dampen velocities TODO better velocity damping
     for (Mesh* mesh : configuration->simulatedObjects) {
         #pragma omp parallel for
         for (int i = 0; i < mesh->numVertices; i++) {
@@ -73,13 +73,12 @@ void Simulation::simulate(Configuration *configuration) {
 
     // Generate collision constraints
     for (Mesh* mesh : configuration->simulatedObjects) {
-        //#pragma omp parallel for // There is a thread-conflict when this is used
         for (int i = 0; i < mesh->numVertices; i++) {
             generateCollisionConstraints(configuration, mesh, i);
         }
     }
 
-    // Setup params
+    // Setup constraint parameters
     Params params;
     params.solverIterations = solverIterations;
     params.stretchFactor = stretchFactor;
@@ -87,12 +86,12 @@ void Simulation::simulate(Configuration *configuration) {
 
     // Project constraints iteratively
     for (int iteration = 0; iteration < solverIterations; iteration++) {
-        //#pragma omp parallel for
+        //#pragma omp parallel for // Improves performance but constraint solving order is not deterministic
         for (int c = 0; c < configuration->constraints.size(); c++) {
             configuration->constraints[c]->project(configuration, params);
         }
 
-        //#pragma omp parallel for
+        //#pragma omp parallel for // Improves performance but constraint solving order is not deterministic
         for (int c = 0; c < configuration->collisionConstraints.size(); c++) {
             configuration->collisionConstraints[c]->project(configuration, params);
         }
@@ -127,7 +126,7 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
     Vector3f normal;
     int triangleIndex;
 
-    // Dynamic object collision
+    // TODO Dynamic object collision
 //    if (false && !mesh->isRigidBody) {
 //        bool meshCollision = mesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 //
@@ -144,23 +143,27 @@ void Simulation::generateCollisionConstraints(Configuration* configuration, Mesh
 //        }
 //    }
 
+    // Static mesh collision
     for (Mesh* staticMesh : configuration->staticObjects) {
         if (!staticMesh->isRigidBody) continue;
 
         bool meshCollision = staticMesh->intersect(rayOrigin, rayDirection, t, normal, index, triangleIndex);
 
-        if (meshCollision && fabs(t) * 0.5f <= (vertexToEstimate).norm() + CLOTH_THICKNESS) {
+        // If a collision occured
+        if (meshCollision && fabs(t) * 0.5f <= (vertexToEstimate).norm() + COLLISION_THRESHOLD) {
 
             // Fix weird negative 0 issue
             if (normal[0] == -0) normal[0] = 0;
             if (normal[1] == -0) normal[1] = 0;
             if (normal[2] == -0) normal[2] = 0;
 
-            if (t >= 0.0f) t -= CLOTH_THICKNESS;
-            else t += CLOTH_THICKNESS;
+            // Account for the offset threshold
+            if (t >= 0.0f) t -= COLLISION_THRESHOLD;
+            else t += COLLISION_THRESHOLD;
 
             Vector3f intersectionPoint = (rayOrigin + t * rayDirection);
 
+            // Build the collision constraint
             CollisionConstraint* constraint = buildStaticCollisionConstraint(mesh, index, normal, intersectionPoint);
             configuration->collisionConstraints.push_back(constraint);
         }
