@@ -2,6 +2,8 @@
 // Created Jack Purvis
 //
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <camera.hpp>
 
 void Camera::setPerspective(float angleOfView, float aspectRatio, float zNear, float zFar) {
